@@ -2,6 +2,7 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/SlidingLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
@@ -10,25 +11,85 @@
     <RelativeLayout
         android:id="@+id/visual_setting"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@drawable/blowline">
+        android:layout_height="wrap_content">
 
-        <Spinner
-            android:id="@+id/listsort"
-            android:layout_width="wrap_content"
+        <RelativeLayout
+            android:id="@+id/spinnerLayout"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_margin="10dp"
-            android:entries="@array/listsort"/>
+            android:background="@drawable/blowline">
+            <Spinner
+                android:id="@+id/listsort"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="10dp"
+                android:entries="@array/listsort"/>
+            <Button
+                android:id="@+id/test"
+                android:layout_alignRight="@id/listsort"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="sfsdf"
+                android:visibility="gone"/>
+        </RelativeLayout>
+
+        <ListView
+            android:id="@+id/Fileload"
+            android:layout_marginLeft="10dp"
+            android:layout_marginRight="10dp"
+            android:layout_marginBottom="10dp"
+            android:layout_below="@id/spinnerLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+        </ListView>
 
     </RelativeLayout>
 
-
-    <Button
-        android:id="@+id/openSlide"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+    <SlidingDrawer
+        android:id="@+id/sliding"
         android:layout_below="@id/visual_setting"
-        android:text="test"/>
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:allowSingleTap="true"
+        android:animateOnClick="true"
+        android:orientation="vertical"
+        android:content="@id/content"
+        android:handle="@id/handle"
+        android:bottomOffset="10dp"
+        android:topOffset="200dp">
+
+        <TextView
+            android:id="@+id/handle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="gone"/>
+
+        <LinearLayout
+            android:id="@+id/content"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#FFFFFFFF"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+
+            <ListView
+                android:id="@+id/listView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+            </ListView>
+
+        </LinearLayout>
+
+
+
+    </SlidingDrawer>
+
 
 
 </RelativeLayout>

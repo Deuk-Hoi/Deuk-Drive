@@ -1,14 +1,17 @@
 package com.deuksoft.deukdrive
 
+import android.content.Context
 import android.os.Bundle
-import android.view.Menu
-import android.view.MenuItem
+import android.view.*
+import android.widget.ArrayAdapter
+import android.widget.BaseAdapter
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import com.google.android.material.navigation.NavigationView
+import kotlinx.android.synthetic.main.content_main.*
 
 class MainActivity : AppCompatActivity() {
 
@@ -25,6 +28,37 @@ class MainActivity : AppCompatActivity() {
         toggle.syncState()
         navView.setNavigationItemSelectedListener(null)
 
+        val arraylist = ArrayList<String>()
+        val adapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, arraylist)
+        adapter.add("득")
+        adapter.add("회")
+        adapter.add("김")
+        adapter.notifyDataSetChanged()
+        listView.adapter = adapter;
+
+
+        val arraylist2 = ArrayList<String>()
+        val adapter2 = ArrayAdapter(this, android.R.layout.simple_list_item_1, arraylist2)
+        adapter2.add("득")
+        adapter2.add("회")
+        adapter2.add("김")
+        adapter2.add("득")
+        adapter2.add("회")
+        adapter2.add("김")
+        adapter2.add("득")
+        adapter2.add("회")
+        adapter2.add("김")
+        adapter2.add("득")
+        adapter2.add("회")
+        adapter2.add("김")
+        adapter2.notifyDataSetChanged()
+        Fileload.adapter = adapter2;
+
+
+        test.setOnClickListener{
+            text.setText(test.text.toString())
+            sliding.animateOpen();
+        }
     }
 
     override fun onBackPressed() {
@@ -45,7 +79,6 @@ class MainActivity : AppCompatActivity() {
     override fun onContextItemSelected(item: MenuItem): Boolean {
 
         //네비게이션 작동부분 구현
-
         var drawer : DrawerLayout = findViewById(R.id.drawer_layout)
         drawer.closeDrawer(GravityCompat.START)
 
