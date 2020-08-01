@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="listsort">
+        <item>오름차순 정렬</item>
+        <item>내림차순 정렬</item>
+        <item>최신 항목순</item>
+        <item>오래된 항목순</item>
+        <item>큰 항목순</item>
+        <item>작은 항목순</item>
+        <item>확정자 명</item>
+    </string-array>
+</resources>
