@@ -2,6 +2,7 @@ package com.deuksoft.deukdrive
 
 import android.content.Context
 import android.os.Bundle
+import android.util.Log
 import android.view.*
 import android.widget.ArrayAdapter
 import android.widget.BaseAdapter
@@ -12,6 +13,11 @@ import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import com.google.android.material.navigation.NavigationView
 import kotlinx.android.synthetic.main.content_main.*
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
 
 class MainActivity : AppCompatActivity() {
 
@@ -59,6 +65,7 @@ class MainActivity : AppCompatActivity() {
             text.setText(test.text.toString())
             sliding.animateOpen();
         }
+        loadSize()
     }
 
     override fun onBackPressed() {
@@ -89,5 +96,29 @@ class MainActivity : AppCompatActivity() {
         // Inflate the menu; this adds items to the action bar if it is present.
         menuInflater.inflate(R.menu.main, menu)
         return true
+    }
+
+    fun loadSize(){
+        val retrofit = Retrofit.Builder()
+            .baseUrl("http://192.168.35.158:3000/get_freedisk/")
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+
+        val retrofitService = retrofit.create(RetrofitInterface::class.java)
+        retrofitService.requestAllData().enqueue(object : Callback<GetDiskSize>{
+            override fun onResponse(call: Call<GetDiskSize>, response: Response<GetDiskSize>) {
+                if(response.isSuccessful)
+                {
+                    val body = response.body()
+                    body?.let {
+                        Log.e("size? ", body.diskPath.toString())
+                    }
+                }
+            }
+
+            override fun onFailure(call: Call<GetDiskSize>, t: Throwable) {
+                Log.e("this is error", t.message.toString())
+            }
+        })
     }
 }
