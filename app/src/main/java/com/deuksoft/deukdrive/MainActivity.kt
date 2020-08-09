@@ -1,11 +1,10 @@
 package com.deuksoft.deukdrive
 
-import android.content.Context
 import android.os.Bundle
 import android.util.Log
-import android.view.*
+import android.view.Menu
+import android.view.MenuItem
 import android.widget.ArrayAdapter
-import android.widget.BaseAdapter
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
@@ -13,6 +12,7 @@ import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import com.google.android.material.navigation.NavigationView
 import kotlinx.android.synthetic.main.content_main.*
+import kotlinx.android.synthetic.main.nav_header_main.*
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -69,17 +69,27 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onBackPressed() {
-        var drawer : DrawerLayout = findViewById(R.id.drawer_layout)
+        val drawer = findViewById<DrawerLayout>(R.id.drawer_layout)
         if (drawer.isDrawerOpen(GravityCompat.START)) {
             drawer.closeDrawer(GravityCompat.START)
-        } else {
-            //Dialog()
+        }else if(sliding.isOpened) {
+            sliding.animateClose()
         }
-        super.onBackPressed()
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        //상단 메뉴
+        when(item.itemId)
+        {
+            android.R.id.home->{
+                return true
+            }
+            R.id.add_icon->{
+                Log.e("dsfdfd","dsfs");
+                sliding.animateOpen()
+                return true
+            }
+        }
+
         return super.onOptionsItemSelected(item)
     }
 
@@ -100,7 +110,7 @@ class MainActivity : AppCompatActivity() {
 
     fun loadSize(){
         val retrofit = Retrofit.Builder()
-            .baseUrl("http://192.168.35.158:3000/get_freedisk/")
+            .baseUrl("http://192.168.35.230:3000/driveMain/get_freedisk/")
             .addConverterFactory(GsonConverterFactory.create())
             .build()
 
@@ -111,7 +121,20 @@ class MainActivity : AppCompatActivity() {
                 {
                     val body = response.body()
                     body?.let {
-                        Log.e("size? ", body.diskPath.toString())
+
+                        var free = body.free.toDouble()
+                        var full = body.size.toDouble()
+
+                        free = free / 1000000000
+                        full = full / 1000000000
+
+                        var use = full - free
+
+                        freedisk.setText(String.format("%.1f",use) + "GB")
+                        fulldisk.setText(full.toInt().toString() + "GB")
+                        diskprogressbar.setMax(full.toInt())
+                        diskprogressbar.setProgress(use.toInt())
+                        freesizetxt.setText(String.format("%.1f",free)+" GB")
                     }
                 }
             }

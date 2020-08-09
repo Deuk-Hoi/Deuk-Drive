@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/SlidingLayout"
@@ -30,7 +30,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="sfsdf"
-                android:visibility="gone"/>
+                android:visibility="visible"/>
         </RelativeLayout>
 
         <ListView
@@ -57,7 +57,7 @@
         android:content="@id/content"
         android:handle="@id/handle"
         android:bottomOffset="10dp"
-        android:topOffset="200dp">
+        android:topOffset="250dp">
 
         <TextView
             android:id="@+id/handle"
@@ -92,4 +92,4 @@
 
 
 
-</RelativeLayout>
+</FrameLayout>
