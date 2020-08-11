@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="newFileCreate">
+        <item>사진 촬영</item>
+        <item>스캔</item>
+        <item>폴더 만들기</item>
+        <item>업로드</item>
+    </string-array>
+</resources>
