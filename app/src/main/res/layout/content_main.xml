@@ -7,11 +7,13 @@
     android:layout_height="match_parent"
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
     tools:showIn="@layout/app_bar_main"
+    android:background="@drawable/corner"
     app:umanoDragView="@id/dragview"
-    app:umanoScrollableView="@id/listView"
-    android:gravity = "bottom"
+    app:umanoScrollableView="@id/itemRecycler"
+    android:gravity= "bottom"
     app:umanoPanelHeight="0dp"
     app:umanoOverlay="false"
+    android:clickable="true"
     app:umanoParallaxOffset="100dp"
     app:umanoShadowHeight="4dp">
 
@@ -55,9 +57,17 @@
         android:orientation="vertical">
 
         <RelativeLayout
+            android:id="@+id/test"
             android:layout_width="match_parent"
             android:layout_height="68dp"
             android:background="@drawable/blowline">
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:layout_marginBottom="20dp"
+                android:layout_centerHorizontal="true"
+                android:src="@drawable/bar"/>
 
             <TextView
                 android:layout_width="wrap_content"
@@ -65,17 +75,23 @@
                 android:paddingLeft="15dp"
                 android:textSize="16sp"
                 android:text="새로 만들기"
+                android:paddingTop="10dp"
                 android:paddingStart="15dp"
                 android:layout_centerVertical="true"/>
 
         </RelativeLayout>
 
-        <ListView
-            android:id="@+id/listView"
+        <androidx.recyclerview.widget.RecyclerView
             android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1">
-        </ListView>
+            android:layout_height="wrap_content"
+            android:id="@+id/itemRecycler"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp">
+
+        </androidx.recyclerview.widget.RecyclerView>
+
 
     </LinearLayout>
 
