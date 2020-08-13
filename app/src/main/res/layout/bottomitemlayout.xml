@@ -11,6 +11,7 @@
         android:layout_centerVertical="true"
         android:layout_marginBottom="4dp"
         android:layout_marginLeft="8dp"
+        android:tint="@color/black"
         android:layout_marginTop="4dp"/>
 
     <TextView

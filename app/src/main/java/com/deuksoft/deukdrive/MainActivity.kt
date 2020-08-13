@@ -1,24 +1,31 @@
 package com.deuksoft.deukdrive
 
+import android.app.Activity
+import android.content.Context
 import android.content.DialogInterface
+import android.content.Intent
+import android.graphics.Color
+import android.net.Uri
 import android.os.Bundle
+import android.os.Environment
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
-import android.widget.ArrayAdapter
-import android.widget.EditText
-import android.widget.ListView
-import android.widget.Toast
+import android.view.ViewGroup
+import android.widget.*
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.view.GravityCompat
+import androidx.core.view.marginLeft
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.deuksoft.deukdrive.ItemAdapter.BottomItemAdapter
 import com.deuksoft.deukdrive.ItemAdapter.BottomMenuItem
 import com.google.android.material.navigation.NavigationView
+import com.gun0912.tedpermission.PermissionListener
+import com.gun0912.tedpermission.TedPermission
 import com.sothree.slidinguppanel.SlidingUpPanelLayout
 import kotlinx.android.synthetic.main.content_main.*
 import kotlinx.android.synthetic.main.nav_header_main.*
@@ -30,13 +37,12 @@ import retrofit2.Callback
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import java.util.jar.Manifest
 
 class MainActivity : AppCompatActivity() {
+
     lateinit var sliding_layout : SlidingUpPanelLayout
-    lateinit var newFileList : Array<String>
-    lateinit var adapter : ArrayAdapter<String>
-    lateinit var listView : ListView
-    lateinit var BottomMenuItem : ArrayList<BottomMenuItem>
+    lateinit var BottomMenuItem : ArrayList<BottomMenuItem> //SlidingUpPanelLayout 아이템 리스트 저장
     lateinit var name : String
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -92,14 +98,16 @@ class MainActivity : AppCompatActivity() {
                 return true
             }
             R.id.add_icon->{
-                Log.e("dsfdfd","dsfs")
                 AddNewFile()
                 GlobalScope.launch {
                     delay(100)
                     sliding_layout.setPanelState(SlidingUpPanelLayout.PanelState.EXPANDED)
                 }
-
                 return true
+            }
+            R.id.search_icon->{
+                permissionReadWrite(this)
+
             }
         }
 
@@ -121,6 +129,7 @@ class MainActivity : AppCompatActivity() {
         return true
     }
 
+    // SlidingUpPanelLayout의 add Icon을 클릭 하였을 때의 내부 메뉴 버튼 부분
     fun AddNewFile(){
         BottomMenuItem = arrayListOf<BottomMenuItem>(
             BottomMenuItem(R.drawable.camera, "사진 촬영"),
@@ -140,17 +149,67 @@ class MainActivity : AppCompatActivity() {
         itemRecycler.setHasFixedSize(true)
     }
 
+    //파일 읽기 쓰기 권한 설정 다이어로그
+    fun permissionReadWrite(context : Context){
+        val permission : PermissionListener = object : PermissionListener{
+            override fun onPermissionGranted() {
+                Toast.makeText(context, "권한이 허용되었습니다.", Toast.LENGTH_SHORT).show()
+                val intent : Intent = Intent(Intent.ACTION_GET_CONTENT)
+                intent.setType("*/*")
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                startActivityForResult(Intent.createChooser(intent,"Open"), 1)
+            }
+
+            override fun onPermissionDenied(deniedPermissions: java.util.ArrayList<String>?) {
+                Toast.makeText(context, "권한이 거부 되었습니다.", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        TedPermission.with(context)
+            .setPermissionListener(permission)
+            .setRationaleMessage("파일을 읽기 / 쓰기 위해서는 \n권한이 필요합니다.")
+            .setDeniedMessage("[설정] > [권한] 에서 권한을 허용할 수 있습니다.")
+            .setPermissions(android.Manifest.permission.READ_EXTERNAL_STORAGE, android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
+            .check()
+
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        if(requestCode == 1 && resultCode == RESULT_OK){
+            var fileUri : Uri? = data?.data
+            Log.e("뭐가올까요?? ",fileUri.toString())
+        }
+    }
+
+
+
+
+    //새폴더를 생성할 때 나오는 Dialog생성 부분
     fun makeFolderDialog(){
         val foldername : EditText = EditText(this)
-        var dialog = AlertDialog.Builder(this)
-        dialog.setTitle("새 폴더의 이름을 입력하세요")
-        dialog.setView(foldername)
+        val container : FrameLayout = FrameLayout(this)
+        foldername.setTextColor(Color.WHITE)
+        val params : FrameLayout.LayoutParams = FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+        params.leftMargin = resources.getDimensionPixelSize(R.dimen.dialog_margin)
+        params.rightMargin = resources.getDimensionPixelSize(R.dimen.dialog_margin)
+        foldername.layoutParams = params
+        container.addView(foldername)
+        var dialog = AlertDialog.Builder(this, R.style.MyAlterDialogStyle)
+        dialog.setTitle("폴더 만들기")
+        dialog.setMessage("이름을 입력하시오")
+        dialog.setView(container)
         var dialog_listener = object : DialogInterface.OnClickListener{
             override fun onClick(dialog: DialogInterface?, select: Int) {
                 when(select){
                     DialogInterface.BUTTON_POSITIVE -> {
                         name = foldername.text.toString()
                         Log.e("Filename",name)
+                        GlobalScope.launch {
+                            delay(100)
+                            sliding_layout.setPanelState(SlidingUpPanelLayout.PanelState.COLLAPSED)
+                        }
                     }
                     DialogInterface.BUTTON_NEGATIVE -> {}
 
@@ -163,6 +222,9 @@ class MainActivity : AppCompatActivity() {
 
     }
 
+
+
+    //서버에서 하드디스크 전체용량과 남은용량을 받는 부분
     fun loadSize(){
         val retrofit = Retrofit.Builder()
             .baseUrl("http://210.219.231.26:3000/driveMain/get_freedisk/")

@@ -32,6 +32,7 @@
             android:layout_height="wrap_content"
             android:src="@drawable/notification"
             android:background="#00FFFFFF"
+            android:tint="@color/black"
             android:layout_marginRight="10dp"
             android:layout_toLeftOf="@id/setting"/>
 
@@ -41,6 +42,7 @@
             android:layout_height="wrap_content"
             android:src="@drawable/setting"
             android:background="#00FFFFFF"
+            android:tint="@color/black"
             android:layout_alignParentRight="true"/>
 
     </RelativeLayout>
