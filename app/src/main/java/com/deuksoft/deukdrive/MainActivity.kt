@@ -1,26 +1,29 @@
 package com.deuksoft.deukdrive
 
-import android.app.Activity
+
 import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
+import android.database.Cursor
 import android.graphics.Color
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
-import android.os.Environment
+
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.ViewGroup
 import android.widget.*
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.view.GravityCompat
-import androidx.core.view.marginLeft
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.deuksoft.deukdrive.FileLoadManager.GetRealPath
 import com.deuksoft.deukdrive.ItemAdapter.BottomItemAdapter
 import com.deuksoft.deukdrive.ItemAdapter.BottomMenuItem
 import com.google.android.material.navigation.NavigationView
@@ -32,12 +35,14 @@ import kotlinx.android.synthetic.main.nav_header_main.*
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import okhttp3.internal.Util
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
-import java.util.jar.Manifest
+import java.io.File
+import java.lang.Exception
 
 class MainActivity : AppCompatActivity() {
 
@@ -154,7 +159,7 @@ class MainActivity : AppCompatActivity() {
         val permission : PermissionListener = object : PermissionListener{
             override fun onPermissionGranted() {
                 Toast.makeText(context, "권한이 허용되었습니다.", Toast.LENGTH_SHORT).show()
-                val intent : Intent = Intent(Intent.ACTION_GET_CONTENT)
+                val intent : Intent = Intent(Intent.ACTION_OPEN_DOCUMENT)
                 intent.setType("*/*")
                 intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
                 startActivityForResult(Intent.createChooser(intent,"Open"), 1)
@@ -174,12 +179,24 @@ class MainActivity : AppCompatActivity() {
 
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
 
         if(requestCode == 1 && resultCode == RESULT_OK){
+
+            var GP : GetRealPath = GetRealPath()
+            var result : String = ""
             var fileUri : Uri? = data?.data
-            Log.e("뭐가올까요?? ",fileUri.toString())
+            var cusor : Cursor? = contentResolver.query(fileUri!!,null,null,null)
+            var FileName = GP.getName(fileUri, cusor!!)
+            cusor.close()
+            cusor = contentResolver.query(fileUri!!,null,null,null)
+            var FileSize = GP.getFileSize(fileUri, cusor!!)
+            var file : File = File(fileUri.toString())
+            var extension : String = FileName.substring(FileName.lastIndexOf(".")+1)
+            Log.e("???", "FileName : ${FileName}, FileSize : ${FileSize}, extension : ${extension}, file : ${file}")
+            sendFile(FileName, FileSize, extension)
         }
     }
 
@@ -222,12 +239,41 @@ class MainActivity : AppCompatActivity() {
 
     }
 
+    fun sendFile(FileName : String, FileSize : String, extension : String)
+    {
+        val retrofit = Retrofit.Builder()
+            .baseUrl("http://118.42.168.26:3000/driveMain/uploadFile/")
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
 
+        val service = retrofit.create(RetrofitInterface::class.java)
+        val fileinfo = HashMap<String, String>()
+        fileinfo.put("FileName",FileName);
+        fileinfo.put("FileSize",FileSize);
+        fileinfo.put("extension",extension);
+        val body = HashMap<String, HashMap<String, String>>()
+        body.put("accepted", fileinfo)
+
+        service.uploadData(body).enqueue(object : Callback<FileData>{
+            override fun onFailure(call: Call<FileData>, t: Throwable) {
+                Log.d("CometChatAPI::", "Failed API call with call: ${call} exception: ${t}")
+            }
+
+            override fun onResponse(call: Call<FileData>, response: Response<FileData>) {
+                try{
+                    Log.d("Responce::", response.message())
+                }catch (e : Exception){
+                    e.printStackTrace()
+                }
+            }
+        })
+
+    }
 
     //서버에서 하드디스크 전체용량과 남은용량을 받는 부분
     fun loadSize(){
         val retrofit = Retrofit.Builder()
-            .baseUrl("http://210.219.231.26:3000/driveMain/get_freedisk/")
+            .baseUrl("http://118.42.168.26:3000/driveMain/get_freedisk/")
             .addConverterFactory(GsonConverterFactory.create())
             .build()
 
