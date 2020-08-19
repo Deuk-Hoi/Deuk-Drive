@@ -1,5 +1,7 @@
 package com.deuksoft.deukdrive
 
+import java.io.File
+
 data class GetDiskSize(
     var diskPath: String = "",
     var free : Long = 0,
@@ -7,8 +9,7 @@ data class GetDiskSize(
 )
 
 data class FileData(val data : Accepted)
-data class Accepted(val accepted: HashMap<String, HashMap<String, String>>)
-//data class Accepted(val accepted: HashMap<String, GetFileInfo>)
+data class Accepted(val accepted: HashMap<String, GetFileInfo>)
 data class GetFileInfo(
     var filename : String,
     var extension : String,

@@ -9,12 +9,17 @@ import android.graphics.Color
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-
+import android.os.Environment
+import android.telephony.mbms.DownloadRequest
 import android.util.Log
+import android.view.Gravity
 import android.view.Menu
 import android.view.MenuItem
 import android.view.ViewGroup
-import android.widget.*
+import android.widget.ArrayAdapter
+import android.widget.EditText
+import android.widget.FrameLayout
+import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AlertDialog
@@ -35,14 +40,17 @@ import kotlinx.android.synthetic.main.nav_header_main.*
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import okhttp3.internal.Util
+import okhttp3.MediaType
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
+import okhttp3.ResponseBody
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.io.File
-import java.lang.Exception
+import java.net.URLEncoder
 
 class MainActivity : AppCompatActivity() {
 
@@ -111,7 +119,6 @@ class MainActivity : AppCompatActivity() {
                 return true
             }
             R.id.search_icon->{
-                permissionReadWrite(this)
 
             }
         }
@@ -145,6 +152,7 @@ class MainActivity : AppCompatActivity() {
        val itemAdapter = BottomItemAdapter(this, BottomMenuItem){bottomMenuItem ->
            when(bottomMenuItem.usetxt){
                "폴더 만들기" -> {makeFolderDialog()}
+               "업로드" -> { permissionReadWrite(this) }
            }
        }
         itemRecycler.adapter = itemAdapter
@@ -174,7 +182,7 @@ class MainActivity : AppCompatActivity() {
             .setPermissionListener(permission)
             .setRationaleMessage("파일을 읽기 / 쓰기 위해서는 \n권한이 필요합니다.")
             .setDeniedMessage("[설정] > [권한] 에서 권한을 허용할 수 있습니다.")
-            .setPermissions(android.Manifest.permission.READ_EXTERNAL_STORAGE, android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
+            .setPermissions(android.Manifest.permission.CAMERA, android.Manifest.permission.WRITE_EXTERNAL_STORAGE, android.Manifest.permission.READ_EXTERNAL_STORAGE)
             .check()
 
     }
@@ -183,25 +191,65 @@ class MainActivity : AppCompatActivity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
 
-        if(requestCode == 1 && resultCode == RESULT_OK){
+        if(requestCode == 1 && resultCode == RESULT_OK) {
 
-            var GP : GetRealPath = GetRealPath()
-            var result : String = ""
-            var fileUri : Uri? = data?.data
+            var GP: GetRealPath = GetRealPath()
+            var result: String = ""
+            var fileUri: Uri? = data?.data
             var cusor : Cursor? = contentResolver.query(fileUri!!,null,null,null)
             var FileName = GP.getName(fileUri, cusor!!)
             cusor.close()
-            cusor = contentResolver.query(fileUri!!,null,null,null)
+            cusor = contentResolver.query(fileUri,null,null,null)
             var FileSize = GP.getFileSize(fileUri, cusor!!)
             var file : File = File(fileUri.toString())
             var extension : String = FileName.substring(FileName.lastIndexOf(".")+1)
             Log.e("???", "FileName : ${FileName}, FileSize : ${FileSize}, extension : ${extension}, file : ${file}")
-            sendFile(FileName, FileSize, extension)
+            Log.e("hi", fileUri.authority!!)//파일 종류 확인 방법
+            Log.e("hello",
+                this.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS).toString()
+            )
+            sendFile(FileName, FileSize, extension, file)
+            newUpload(fileUri)
+
         }
     }
+    fun newUpload(fileUri : Uri)
+    {
+        val retrofit = Retrofit.Builder()
+            .baseUrl("http://118.42.168.26:3000/")
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+        try{
+            var service = retrofit.create(RetrofitInterface::class.java)
+            var a = getRealPathFromURI(this, fileUri)
+            var file = File(a)
+            Log.e("asddasdasds",file.path)
+            var requestFile : RequestBody = RequestBody.create(MediaType.parse(contentResolver.getType(fileUri)), file)
+            //val encodedFileName = Base64.encodeToString(file.name.toByteArray(Charsets.UTF_8), Base64.NO_WRAP)
+            var body : MultipartBody.Part = MultipartBody.Part.createFormData("myFile", URLEncoder.encode(file.name, "utf-8"), requestFile)
+            var name : RequestBody = RequestBody.create(MediaType.parse("multipart/form-data"), "myFile")
+            var filename : RequestBody = RequestBody.create(MediaType.parse("multipart/form-data"), file.name)
+            var call : Call<ResponseBody> = service.upload(filename, body, name)
+            call.enqueue(object : Callback<ResponseBody>{
+                override fun onResponse(call: Call<ResponseBody>, response: Response<ResponseBody>) {
+                    Log.e("call", response.message())
+                    if(response.code() == 200){
+                        Log.e("hello", "Succecss")
+                    }
+                }
+
+                override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
+                    Log.e("error", t.message)
+                }
+            })
+        }catch (e : java.lang.Exception){
+            var toast = Toast.makeText(this, "내장메모리로 접근하여 사용해 주세요.", Toast.LENGTH_SHORT)
+            toast.setGravity(Gravity.TOP, 0, 200)
+            toast.show()
+        }
 
 
-
+    }
 
     //새폴더를 생성할 때 나오는 Dialog생성 부분
     fun makeFolderDialog(){
@@ -229,7 +277,6 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                     DialogInterface.BUTTON_NEGATIVE -> {}
-
                 }
             }
         }
@@ -239,7 +286,7 @@ class MainActivity : AppCompatActivity() {
 
     }
 
-    fun sendFile(FileName : String, FileSize : String, extension : String)
+    fun sendFile(FileName : String, FileSize : String, extension : String, file : File)
     {
         val retrofit = Retrofit.Builder()
             .baseUrl("http://118.42.168.26:3000/driveMain/uploadFile/")
@@ -267,7 +314,6 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         })
-
     }
 
     //서버에서 하드디스크 전체용량과 남은용량을 받는 부분
