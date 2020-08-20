@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "800878398784",
+    "firebase_url": "https://deuk-drive.firebaseio.com",
+    "project_id": "deuk-drive",
+    "storage_bucket": "deuk-drive.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:800878398784:android:6125ca16ad20247fbcfea5",
+        "android_client_info": {
+          "package_name": "com.deuksoft.deukdrive"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "800878398784-fjoo1vr67bgjf6a9jcb7i03jc2a2hvqe.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDNOf9ovcOq_fAruot9DmAIj_JpukZ-u1M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "800878398784-fjoo1vr67bgjf6a9jcb7i03jc2a2hvqe.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

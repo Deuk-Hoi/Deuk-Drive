@@ -32,6 +32,7 @@ import com.deuksoft.deukdrive.FileLoadManager.GetRealPath
 import com.deuksoft.deukdrive.ItemAdapter.BottomItemAdapter
 import com.deuksoft.deukdrive.ItemAdapter.BottomMenuItem
 import com.google.android.material.navigation.NavigationView
+import com.google.firebase.firestore.FirebaseFirestore
 import com.gun0912.tedpermission.PermissionListener
 import com.gun0912.tedpermission.TedPermission
 import com.sothree.slidinguppanel.SlidingUpPanelLayout
@@ -57,6 +58,7 @@ class MainActivity : AppCompatActivity() {
     lateinit var sliding_layout : SlidingUpPanelLayout
     lateinit var BottomMenuItem : ArrayList<BottomMenuItem> //SlidingUpPanelLayout 아이템 리스트 저장
     lateinit var name : String
+    lateinit var db : FirebaseFirestore
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -91,6 +93,21 @@ class MainActivity : AppCompatActivity() {
         Fileload.adapter = adapter2;
 
         loadSize()
+        db = FirebaseFirestore.getInstance()
+        var user : HashMap<String, Any> = HashMap<String, Any>()
+        user.put("first", "DeukHoi")
+        user.put("last", "Kim")
+        user.put("born", 1213)
+
+        db.collection("users")
+            .add(user)
+            .addOnSuccessListener { documentReference ->
+                Log.d("hello", "DocumentSnapshot added with ID: ${documentReference.id}")
+            }
+            .addOnFailureListener { e ->
+                Log.w("world", "Error adding document", e)
+            }
+
     }
 
     override fun onBackPressed() {
@@ -119,7 +136,16 @@ class MainActivity : AppCompatActivity() {
                 return true
             }
             R.id.search_icon->{
-
+                db.collection("users")
+                    .get()
+                    .addOnSuccessListener { result ->
+                        for (document in result) {
+                            Log.d("my", "${document.id} => ${document.data}")
+                        }
+                    }
+                    .addOnFailureListener { exception ->
+                        Log.w("bro", "Error getting documents.", exception)
+                    }
             }
         }
 
