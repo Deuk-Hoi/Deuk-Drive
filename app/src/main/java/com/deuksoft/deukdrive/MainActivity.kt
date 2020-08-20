@@ -10,16 +10,9 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
-import android.telephony.mbms.DownloadRequest
 import android.util.Log
-import android.view.Gravity
-import android.view.Menu
-import android.view.MenuItem
-import android.view.ViewGroup
-import android.widget.ArrayAdapter
-import android.widget.EditText
-import android.widget.FrameLayout
-import android.widget.Toast
+import android.view.*
+import android.widget.*
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AlertDialog
@@ -31,6 +24,10 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.deuksoft.deukdrive.FileLoadManager.GetRealPath
 import com.deuksoft.deukdrive.ItemAdapter.BottomItemAdapter
 import com.deuksoft.deukdrive.ItemAdapter.BottomMenuItem
+import com.deuksoft.deukdrive.RetrofitManager.FileData
+import com.deuksoft.deukdrive.RetrofitManager.GetDiskSize
+import com.deuksoft.deukdrive.RetrofitManager.RetrofitInterface
+import com.deuksoft.deukdrive.RetrofitManager.getRealPathFromURI
 import com.google.android.material.navigation.NavigationView
 import com.google.firebase.firestore.FirebaseFirestore
 import com.gun0912.tedpermission.PermissionListener
@@ -53,7 +50,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.io.File
 import java.net.URLEncoder
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), View.OnClickListener {
 
     lateinit var sliding_layout : SlidingUpPanelLayout
     lateinit var BottomMenuItem : ArrayList<BottomMenuItem> //SlidingUpPanelLayout 아이템 리스트 저장
@@ -73,6 +70,9 @@ class MainActivity : AppCompatActivity() {
         drawerLayout.addDrawerListener(toggle)
         toggle.syncState()
         navView.setNavigationItemSelectedListener(null)
+
+        val nav_header_view : View = navView.getHeaderView(0)
+        val userstate : TextView = nav_header_view.findViewById(R.id.userstate)
 
         val arraylist2 = ArrayList<String>()
         val adapter2 = ArrayAdapter(this, android.R.layout.simple_list_item_1, arraylist2)
@@ -108,8 +108,21 @@ class MainActivity : AppCompatActivity() {
                 Log.w("world", "Error adding document", e)
             }
 
+        userstate.setOnClickListener(this)
+
     }
 
+    //모든 버튼 이벤트 처리부분
+    override fun onClick(v: View?) {
+        when(v!!.id){
+            R.id.userstate ->{
+                val Login = Intent(this, Login::class.java)
+                startActivity(Login)
+            }
+        }
+    }
+
+    //뒤로가기 버튼을 눌렀을 때 이벤트
     override fun onBackPressed() {
         val drawer = findViewById<DrawerLayout>(R.id.drawer_layout)
         if (drawer.isDrawerOpen(GravityCompat.START)) {
@@ -118,9 +131,12 @@ class MainActivity : AppCompatActivity() {
         else if(sliding_layout.panelState == SlidingUpPanelLayout.PanelState.EXPANDED)
         {
             sliding_layout.setPanelState(SlidingUpPanelLayout.PanelState.COLLAPSED)
+        }else{
+            finishAffinity() //어플리케이션 완전히 종료
         }
     }
 
+    //툴바의 메뉴 아이콘 눌렀을 때의 이벤트 처리 부분
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when(item.itemId)
         {
@@ -185,7 +201,7 @@ class MainActivity : AppCompatActivity() {
 
         val linearManger = LinearLayoutManager(this)
         itemRecycler.layoutManager = linearManger
-        itemRecycler.setHasFixedSize(true)
+        itemRecycler.setHasFixedSize(true) //리스트가 바뀌었을 때 반응형으로 하기위한 코드
     }
 
     //파일 읽기 쓰기 권한 설정 다이어로그
@@ -213,6 +229,8 @@ class MainActivity : AppCompatActivity() {
 
     }
 
+
+    //인텐트를 통하여 결과를 반환 받을 때 사용하는 부분(파일 선택시 파일의 속성 출력 구간)
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
@@ -239,6 +257,7 @@ class MainActivity : AppCompatActivity() {
 
         }
     }
+    //파일 업로드 구간
     fun newUpload(fileUri : Uri)
     {
         val retrofit = Retrofit.Builder()
@@ -247,7 +266,10 @@ class MainActivity : AppCompatActivity() {
             .build()
         try{
             var service = retrofit.create(RetrofitInterface::class.java)
-            var a = getRealPathFromURI(this, fileUri)
+            var a = getRealPathFromURI(
+                this,
+                fileUri
+            )
             var file = File(a)
             Log.e("asddasdasds",file.path)
             var requestFile : RequestBody = RequestBody.create(MediaType.parse(contentResolver.getType(fileUri)), file)
@@ -312,6 +334,7 @@ class MainActivity : AppCompatActivity() {
 
     }
 
+    //파일의 정보 서버로 보내는 구간
     fun sendFile(FileName : String, FileSize : String, extension : String, file : File)
     {
         val retrofit = Retrofit.Builder()

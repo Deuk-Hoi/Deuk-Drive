@@ -1,4 +1,4 @@
-package com.deuksoft.deukdrive
+package com.deuksoft.deukdrive.RetrofitManager
 
 import okhttp3.MultipartBody
 import okhttp3.RequestBody

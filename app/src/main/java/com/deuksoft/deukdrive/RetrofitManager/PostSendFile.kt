@@ -1,4 +1,4 @@
-package com.deuksoft.deukdrive
+package com.deuksoft.deukdrive.RetrofitManager
 
 import android.content.ContentUris
 import android.content.Context
@@ -29,7 +29,9 @@ fun getRealPathFromURI(context: Context, uri: Uri ): String? {
                         + split[1])
             } else {
                 val SDcardpath =
-                    getRemovableSDCardPath(context).split("/Android".toRegex()).toTypedArray()[0]
+                    getRemovableSDCardPath(
+                        context
+                    ).split("/Android".toRegex()).toTypedArray()[0]
                 SDcardpath + "/" + split[1]
             }
         } else if (isDownloadsDocument(uri)) {
@@ -39,14 +41,18 @@ fun getRealPathFromURI(context: Context, uri: Uri ): String? {
                 if (id.startsWith("raw:")) {
                     return id.replaceFirst("raw:", "")
                 }
-                val fileId: Long? = getFileId(uri)
+                val fileId: Long? =
+                    getFileId(uri)
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     try {
                         val inputStream: InputStream =
                             context.contentResolver.openInputStream(uri)
                         val file =
                             File(context.cacheDir.absolutePath.toString() + "/" + fileId)
-                        writeFile(inputStream, file)
+                        writeFile(
+                            inputStream,
+                            file
+                        )
                         return file.getAbsolutePath()
                     } catch (e: FileNotFoundException) {
                         e.printStackTrace()
@@ -65,7 +71,12 @@ fun getRealPathFromURI(context: Context, uri: Uri ): String? {
                                 fileId!!
                             )
                             val path =
-                                getDataColumn(context, contentUri, null, null)
+                                getDataColumn(
+                                    context,
+                                    contentUri,
+                                    null,
+                                    null
+                                )
                             if (path != null) {
                                 return path
                             }

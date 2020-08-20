@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".Login">
+
+    <TextView
+        android:id="@+id/Logintitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginTop="150dp"
+        android:text="Deuk Drive 로그인"
+        android:textColor="@color/blue"
+        android:textSize="30dp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toTopOf="@id/LoginForm"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <RelativeLayout
+        android:id="@+id/LoginForm"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="80dp"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/Logintitle"
+        android:layout_marginLeft="20dp"
+        android:layout_marginRight="20dp">
+
+        <EditText
+            android:id="@+id/userid"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="10dp"
+            android:singleLine="true"
+            android:background="@drawable/corner"
+            android:hint="아이디를 입력하시오"/>
+        <EditText
+            android:id="@+id/userpass"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="비밀번호를 입력하시오"
+            android:layout_marginTop="15dp"
+            android:singleLine="true"
+            android:padding="10dp"
+            android:background="@drawable/corner"
+            android:inputType="textPassword"
+            android:layout_below="@id/userid"/>
+
+        <Button
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="로그인"
+            android:textStyle="bold"
+            android:textSize="17dp"
+            android:layout_marginTop="20dp"
+            android:background="@drawable/buttoncorner"
+            android:textColor="@color/white"
+            android:layout_below="@id/userpass"/>
+
+    </RelativeLayout>
+
+    <LinearLayout
+        android:id="@+id/other"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="40dp"
+        android:layout_marginLeft="20dp"
+        android:layout_marginRight="20dp"
+        android:layout_marginBottom="100dp"
+        app:layout_constraintTop_toBottomOf="@id/LoginForm">
+
+        <Button
+            android:id="@+id/SignUpBtn"
+            android:layout_width="wrap_content"
+            android:layout_height="fill_parent"
+            android:layout_marginTop="5dp"
+            android:layout_marginBottom="5dp"
+            android:layout_weight="1.4"
+            android:background="@drawable/buttoncorner"
+            android:textColor="@color/white"
+            android:textStyle="bold"
+            android:textSize="17dp"
+            android:text="회원가입"/>
+
+        <com.google.android.gms.common.SignInButton
+            android:id="@+id/GoogleSignIn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+
+            android:layout_marginLeft="10dp"
+            android:layout_weight="1"/>
+
+    </LinearLayout>
+
+
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>

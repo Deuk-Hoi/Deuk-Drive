@@ -1,6 +1,4 @@
-package com.deuksoft.deukdrive
-
-import java.io.File
+package com.deuksoft.deukdrive.RetrofitManager
 
 data class GetDiskSize(
     var diskPath: String = "",
