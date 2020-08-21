@@ -29,6 +29,8 @@ import com.deuksoft.deukdrive.RetrofitManager.GetDiskSize
 import com.deuksoft.deukdrive.RetrofitManager.RetrofitInterface
 import com.deuksoft.deukdrive.RetrofitManager.getRealPathFromURI
 import com.google.android.material.navigation.NavigationView
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.FirebaseFirestore
 import com.gun0912.tedpermission.PermissionListener
 import com.gun0912.tedpermission.TedPermission
@@ -50,29 +52,36 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.io.File
 import java.net.URLEncoder
 
-class MainActivity : AppCompatActivity(), View.OnClickListener {
+class MainActivity : AppCompatActivity(), View.OnClickListener,
+    NavigationView.OnNavigationItemSelectedListener {
 
     lateinit var sliding_layout : SlidingUpPanelLayout
     lateinit var BottomMenuItem : ArrayList<BottomMenuItem> //SlidingUpPanelLayout 아이템 리스트 저장
     lateinit var name : String
     lateinit var db : FirebaseFirestore
+    lateinit var user: FirebaseUser
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        val drawerLayout: DrawerLayout = findViewById(R.id.drawer_layout)
+        val navView: NavigationView = findViewById(R.id.nav_view)
+        val nav_header_view : View = navView.getHeaderView(0)
+        val userstate : TextView = nav_header_view.findViewById(R.id.userstate)
+        if(intent.hasExtra("GoogleAccount"))
+        {
+            user = intent.getParcelableExtra("GoogleAccount")
+            userstate.text = "${user.displayName}님 환영합니다."
+        }
 
         val toolbar: Toolbar = findViewById(R.id.toolbar)
         setSupportActionBar(toolbar)
         sliding_layout = findViewById(R.id.SlidingLayout)
 
-        val drawerLayout: DrawerLayout = findViewById(R.id.drawer_layout)
-        val navView: NavigationView = findViewById(R.id.nav_view)
         var toggle = ActionBarDrawerToggle(this, drawerLayout,toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close)
         drawerLayout.addDrawerListener(toggle)
         toggle.syncState()
-        navView.setNavigationItemSelectedListener(null)
-
-        val nav_header_view : View = navView.getHeaderView(0)
-        val userstate : TextView = nav_header_view.findViewById(R.id.userstate)
+        navView.setNavigationItemSelectedListener(this)
 
         val arraylist2 = ArrayList<String>()
         val adapter2 = ArrayAdapter(this, android.R.layout.simple_list_item_1, arraylist2)
@@ -168,20 +177,39 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         return super.onOptionsItemSelected(item)
     }
 
+    override fun onNavigationItemSelected(item: MenuItem): Boolean {
+        when(item.itemId){
+            R.id.nav_home ->{
+                Log.e("fsdf", "hellop")
+            }
+            R.id.logout ->{
+                FirebaseAuth.getInstance().signOut()
+                val intent = Intent(this, Login::class.java)
+                startActivity(intent)
+                finish()
+            }
+        }
+        var drawer : DrawerLayout = findViewById(R.id.drawer_layout)
+        drawer.closeDrawer(GravityCompat.START)
+        return true
+    }
+
     override fun onContextItemSelected(item: MenuItem): Boolean {
 
         //네비게이션 작동부분 구현
         var drawer : DrawerLayout = findViewById(R.id.drawer_layout)
         drawer.closeDrawer(GravityCompat.START)
-
         return true
     }
+
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         // Inflate the menu; this adds items to the action bar if it is present.
         menuInflater.inflate(R.menu.main, menu)
         return true
     }
+
+
 
     // SlidingUpPanelLayout의 add Icon을 클릭 하였을 때의 내부 메뉴 버튼 부분
     fun AddNewFile(){
@@ -266,10 +294,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
             .build()
         try{
             var service = retrofit.create(RetrofitInterface::class.java)
-            var a = getRealPathFromURI(
-                this,
-                fileUri
-            )
+            var a = getRealPathFromURI(this, fileUri)
             var file = File(a)
             Log.e("asddasdasds",file.path)
             var requestFile : RequestBody = RequestBody.create(MediaType.parse(contentResolver.getType(fileUri)), file)
@@ -295,8 +320,6 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
             toast.setGravity(Gravity.TOP, 0, 200)
             toast.show()
         }
-
-
     }
 
     //새폴더를 생성할 때 나오는 Dialog생성 부분

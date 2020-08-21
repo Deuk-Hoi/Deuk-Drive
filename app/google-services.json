@@ -15,6 +15,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "800878398784-s3tbh25iohdj059ukth7897enecqohp9.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.deuksoft.deukdrive",
+            "certificate_hash": "3f668845658fc889781e21fddb0e3b7f10d9a317"
+          }
+        },
+        {
           "client_id": "800878398784-fjoo1vr67bgjf6a9jcb7i03jc2a2hvqe.apps.googleusercontent.com",
           "client_type": 3
         }

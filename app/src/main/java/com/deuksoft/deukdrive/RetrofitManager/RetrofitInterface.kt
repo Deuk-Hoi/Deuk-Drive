@@ -25,5 +25,3 @@ interface RetrofitInterface{
         @Part("myFile") name: RequestBody
     ): Call<ResponseBody>
 }
-
-/**/

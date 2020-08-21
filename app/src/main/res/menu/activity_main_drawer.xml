@@ -17,4 +17,12 @@
             android:icon="@drawable/ic_menu_slideshow"
             android:title="@string/menu_slideshow" />
     </group>
+    <item android:title="Login">
+        <menu>
+            <item
+                android:id="@+id/logout"
+                android:icon="@drawable/logout"
+                android:title="로그아웃"/>
+        </menu>
+    </item>
 </menu>
