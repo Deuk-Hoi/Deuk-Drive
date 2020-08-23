@@ -21,7 +21,14 @@ interface RetrofitInterface{
     @POST("/driveMain/create/")
     fun upload(
         @Part("filename") filename : RequestBody,
-        @Part file : MultipartBody.Part,
-        @Part("myFile") name: RequestBody
+        @Part("saveUser") savaUser : RequestBody,
+        @Part("myFile") name: RequestBody,
+        @Part file : MultipartBody.Part
     ): Call<ResponseBody>
+
+
+    @POST("/driveMain/checkExistFolder")
+    fun requestExistFile(
+        @Body foldername : HashMap<String, String>
+    ):Call<ExistFolderState>
 }

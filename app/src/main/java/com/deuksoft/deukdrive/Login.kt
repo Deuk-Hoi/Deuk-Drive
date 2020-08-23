@@ -30,11 +30,6 @@ class Login : AppCompatActivity() {
 
         googleSignIn = findViewById(R.id.googleSignIn)
         mAuth = FirebaseAuth.getInstance()
-        /*if (mAuth.currentUser != null) {
-            val intent = Intent(application, MainActivity::class.java)
-            startActivity(intent)
-            finish()
-        }*/
         // Configure Google Sign In
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestIdToken(getString(R.string.default_web_client_id))
@@ -99,6 +94,7 @@ class Login : AppCompatActivity() {
                 if (task.isSuccessful) {
                     // Sign in success, update UI with the signed-in user's information
                     Log.d("Success", "signInWithCredential:success")
+                    //회원가입부분으로 여기에서 사용자 파일 크기를 지정해 준다.
                     val user = mAuth.currentUser
                     updateUI(user)
                 } else {
@@ -108,8 +104,6 @@ class Login : AppCompatActivity() {
                     Toast.makeText(this, "Authentication Failed.", Toast.LENGTH_SHORT).show()
                     updateUI(null)
                 }
-
-                // ...
             }
     }
 

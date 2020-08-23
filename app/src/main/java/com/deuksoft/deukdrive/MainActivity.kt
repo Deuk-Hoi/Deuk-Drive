@@ -24,10 +24,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.deuksoft.deukdrive.FileLoadManager.GetRealPath
 import com.deuksoft.deukdrive.ItemAdapter.BottomItemAdapter
 import com.deuksoft.deukdrive.ItemAdapter.BottomMenuItem
-import com.deuksoft.deukdrive.RetrofitManager.FileData
-import com.deuksoft.deukdrive.RetrofitManager.GetDiskSize
-import com.deuksoft.deukdrive.RetrofitManager.RetrofitInterface
-import com.deuksoft.deukdrive.RetrofitManager.getRealPathFromURI
+import com.deuksoft.deukdrive.RetrofitManager.*
 import com.google.android.material.navigation.NavigationView
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
@@ -51,6 +48,10 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.io.File
 import java.net.URLEncoder
+import java.text.SimpleDateFormat
+import java.util.*
+import kotlin.collections.ArrayList
+import kotlin.collections.HashMap
 
 class MainActivity : AppCompatActivity(), View.OnClickListener,
     NavigationView.OnNavigationItemSelectedListener {
@@ -71,7 +72,10 @@ class MainActivity : AppCompatActivity(), View.OnClickListener,
         if(intent.hasExtra("GoogleAccount"))
         {
             user = intent.getParcelableExtra("GoogleAccount")
+            ExistUserFolder(user.displayName.toString())
             userstate.text = "${user.displayName}님 환영합니다."
+            Log.e("privite?", user.email)
+
         }
 
         val toolbar: Toolbar = findViewById(R.id.toolbar)
@@ -102,7 +106,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener,
         Fileload.adapter = adapter2;
 
         loadSize()
-        db = FirebaseFirestore.getInstance()
+        /*db = FirebaseFirestore.getInstance()
         var user : HashMap<String, Any> = HashMap<String, Any>()
         user.put("first", "DeukHoi")
         user.put("last", "Kim")
@@ -115,7 +119,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener,
             }
             .addOnFailureListener { e ->
                 Log.w("world", "Error adding document", e)
-            }
+            }*/
 
         userstate.setOnClickListener(this)
 
@@ -202,7 +206,6 @@ class MainActivity : AppCompatActivity(), View.OnClickListener,
         return true
     }
 
-
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         // Inflate the menu; this adds items to the action bar if it is present.
         menuInflater.inflate(R.menu.main, menu)
@@ -257,7 +260,6 @@ class MainActivity : AppCompatActivity(), View.OnClickListener,
 
     }
 
-
     //인텐트를 통하여 결과를 반환 받을 때 사용하는 부분(파일 선택시 파일의 속성 출력 구간)
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -281,13 +283,12 @@ class MainActivity : AppCompatActivity(), View.OnClickListener,
                 this.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS).toString()
             )
             sendFile(FileName, FileSize, extension, file)
-            newUpload(fileUri)
+            newUpload(fileUri, user)
 
         }
     }
     //파일 업로드 구간
-    fun newUpload(fileUri : Uri)
-    {
+    fun newUpload(fileUri : Uri, user: FirebaseUser){
         val retrofit = Retrofit.Builder()
             .baseUrl("http://118.42.168.26:3000/")
             .addConverterFactory(GsonConverterFactory.create())
@@ -300,9 +301,10 @@ class MainActivity : AppCompatActivity(), View.OnClickListener,
             var requestFile : RequestBody = RequestBody.create(MediaType.parse(contentResolver.getType(fileUri)), file)
             //val encodedFileName = Base64.encodeToString(file.name.toByteArray(Charsets.UTF_8), Base64.NO_WRAP)
             var body : MultipartBody.Part = MultipartBody.Part.createFormData("myFile", URLEncoder.encode(file.name, "utf-8"), requestFile)
-            var name : RequestBody = RequestBody.create(MediaType.parse("multipart/form-data"), "myFile")
             var filename : RequestBody = RequestBody.create(MediaType.parse("multipart/form-data"), file.name)
-            var call : Call<ResponseBody> = service.upload(filename, body, name)
+            var name : RequestBody = RequestBody.create(MediaType.parse("multipart/form-data"), "myFile")
+            var saveUser : RequestBody = RequestBody.create(MediaType.parse("multipart/form-data"), user.displayName)
+            var call : Call<ResponseBody> = service.upload(filename, saveUser, name, body)
             call.enqueue(object : Callback<ResponseBody>{
                 override fun onResponse(call: Call<ResponseBody>, response: Response<ResponseBody>) {
                     Log.e("call", response.message())
@@ -358,8 +360,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener,
     }
 
     //파일의 정보 서버로 보내는 구간
-    fun sendFile(FileName : String, FileSize : String, extension : String, file : File)
-    {
+    fun sendFile(FileName : String, FileSize : String, extension : String, file : File){
         val retrofit = Retrofit.Builder()
             .baseUrl("http://118.42.168.26:3000/driveMain/uploadFile/")
             .addConverterFactory(GsonConverterFactory.create())
@@ -381,6 +382,33 @@ class MainActivity : AppCompatActivity(), View.OnClickListener,
             override fun onResponse(call: Call<FileData>, response: Response<FileData>) {
                 try{
                     Log.d("Responce::", response.message())
+                }catch (e : Exception){
+                    e.printStackTrace()
+                }
+            }
+        })
+    }
+
+    //각 User마다 저장할 사용자 이름의 폴더가 있는지 검사하는 부분 없으면 생성.
+    fun ExistUserFolder(foldername : String){
+        val retrofit = Retrofit.Builder()
+            .baseUrl("http://118.42.168.26:3000/")
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+
+        val service = retrofit.create(RetrofitInterface::class.java)
+        val folder = HashMap<String, String>()
+        folder.put("foldername", foldername)
+
+        service.requestExistFile(folder).enqueue(object : Callback<ExistFolderState>{
+            override fun onFailure(call: Call<ExistFolderState>, t: Throwable) {
+                Log.e("message", t.message)
+            }
+
+            override fun onResponse(call: Call<ExistFolderState>, response: Response<ExistFolderState>) {
+                try{
+                    val existFolderState = response.body()
+                    Log.d("Responce::", existFolderState!!.state)
                 }catch (e : Exception){
                     e.printStackTrace()
                 }
