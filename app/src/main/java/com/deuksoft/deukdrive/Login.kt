@@ -15,6 +15,10 @@ import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
+import java.text.SimpleDateFormat
+import java.util.*
 
 
 class Login : AppCompatActivity() {
@@ -23,6 +27,22 @@ class Login : AppCompatActivity() {
     lateinit var googleSigninClient : GoogleSignInClient
     val RC_SING_IN = 1000
     lateinit var googleSignIn : SignInButton
+    var db : FirebaseFirestore = FirebaseFirestore.getInstance()
+    var dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+    /*db = FirebaseFirestore.getInstance()
+        var user : HashMap<String, Any> = HashMap<String, Any>()
+        user.put("first", "DeukHoi")
+        user.put("last", "Kim")
+        user.put("born", 1213)
+
+        db.collection("users")
+            .add(user)
+            .addOnSuccessListener { documentReference ->
+                Log.d("hello", "DocumentSnapshot added with ID: ${documentReference.id}")
+            }
+            .addOnFailureListener { e ->
+                Log.w("world", "Error adding document", e)
+            }*/
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -80,6 +100,13 @@ class Login : AppCompatActivity() {
 
     private fun updateUI(user: FirebaseUser?) { //update ui code here
         if (user != null) {
+            //앱을 실행시킬 때 마다 마지막 로그인 시간 수정
+            var updateLastSignin = Date()
+            dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+            var updateDate = hashMapOf("lastSignIn" to dateFormat.format(updateLastSignin))
+            db.collection("userinfo").document(user.displayName.toString()).update(updateDate as Map<String, Any>)
+
+            //이후 앱 실행
             val intent = Intent(this, MainActivity::class.java)
             intent.putExtra("GoogleAccount", user)
             startActivity(intent)
@@ -96,6 +123,22 @@ class Login : AppCompatActivity() {
                     Log.d("Success", "signInWithCredential:success")
                     //회원가입부분으로 여기에서 사용자 파일 크기를 지정해 준다.
                     val user = mAuth.currentUser
+                    var SignzUpdate = Date(user!!.metadata!!.creationTimestamp)
+                    var lastSignIndate = Date(user!!.metadata!!.lastSignInTimestamp)
+                    dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+                    var dbuser = hashMapOf(
+                        "username" to user!!.displayName,
+                        "useremail" to user!!.email,
+                        "signUp" to dateFormat.format(SignzUpdate),
+                        "lastSignIn" to dateFormat.format(lastSignIndate),
+                        "fullsize" to 42949672960L,
+                        "freesize" to 42949672960L
+                    )
+                    db.collection("userinfo").document(user.displayName.toString())
+                        .set(dbuser, SetOptions.merge()) // 문서가 있는지 확실하지 않은 경우 전체 문서를 실수로 덮어쓰지 않도록 새 데이터를 기존 문서와 병합하는 옵션
+                        .addOnSuccessListener { Log.d("Success", "DocumentSnapshot successfully written!") }
+                        .addOnFailureListener { e -> Log.w("Failed", "Error writing document", e) }
+
                     updateUI(user)
                 } else {
                     // If sign in fails, display a message to the user.

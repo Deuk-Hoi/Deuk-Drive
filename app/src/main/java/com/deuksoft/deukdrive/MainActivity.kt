@@ -75,7 +75,6 @@ class MainActivity : AppCompatActivity(), View.OnClickListener,
             ExistUserFolder(user.displayName.toString())
             userstate.text = "${user.displayName}님 환영합니다."
             Log.e("privite?", user.email)
-
         }
 
         val toolbar: Toolbar = findViewById(R.id.toolbar)
@@ -106,21 +105,6 @@ class MainActivity : AppCompatActivity(), View.OnClickListener,
         Fileload.adapter = adapter2;
 
         loadSize()
-        /*db = FirebaseFirestore.getInstance()
-        var user : HashMap<String, Any> = HashMap<String, Any>()
-        user.put("first", "DeukHoi")
-        user.put("last", "Kim")
-        user.put("born", 1213)
-
-        db.collection("users")
-            .add(user)
-            .addOnSuccessListener { documentReference ->
-                Log.d("hello", "DocumentSnapshot added with ID: ${documentReference.id}")
-            }
-            .addOnFailureListener { e ->
-                Log.w("world", "Error adding document", e)
-            }*/
-
         userstate.setOnClickListener(this)
 
     }
