@@ -102,7 +102,6 @@ class Login : AppCompatActivity() {
         if (user != null) {
             //앱을 실행시킬 때 마다 마지막 로그인 시간 수정
             var updateLastSignin = Date()
-            dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
             var updateDate = hashMapOf("lastSignIn" to dateFormat.format(updateLastSignin))
             db.collection("userinfo").document(user.displayName.toString()).update(updateDate as Map<String, Any>)
 
@@ -134,7 +133,7 @@ class Login : AppCompatActivity() {
                         "fullsize" to 42949672960L,
                         "freesize" to 42949672960L
                     )
-                    db.collection("userinfo").document(user.displayName.toString())
+                    db.collection("UserInfo").document(user.email.toString())
                         .set(dbuser, SetOptions.merge()) // 문서가 있는지 확실하지 않은 경우 전체 문서를 실수로 덮어쓰지 않도록 새 데이터를 기존 문서와 병합하는 옵션
                         .addOnSuccessListener { Log.d("Success", "DocumentSnapshot successfully written!") }
                         .addOnFailureListener { e -> Log.w("Failed", "Error writing document", e) }

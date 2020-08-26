@@ -31,4 +31,5 @@ interface RetrofitInterface{
     fun requestExistFile(
         @Body foldername : HashMap<String, String>
     ):Call<ExistFolderState>
+
 }

@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="?attr/selectableItemBackground"
+    android:clickable="true">
+
+    <ImageView
+        android:id="@+id/Fileimg"
+        android:layout_width="54dp"
+        android:layout_height="54dp"
+        android:layout_centerVertical="true"
+        android:layout_marginBottom="8dp"
+        android:layout_marginLeft="8dp"
+        android:layout_marginTop="8dp"/>
+
+    <TextView
+        android:id="@+id/FileName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_toRightOf="@id/Fileimg"
+        android:layout_marginTop="10dp"
+        android:layout_marginBottom="10dp"
+        android:layout_marginLeft="20dp"
+        android:layout_marginRight="20dp"
+        android:gravity="left"
+        android:textSize="15dp"
+        android:textColor="@color/black"
+        android:text="파일 이름 적는칸"/>
+
+    <TextView
+        android:id="@+id/UploadDate"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/FileName"
+        android:layout_toRightOf="@id/Fileimg"
+        android:layout_marginLeft="20dp"
+        android:layout_marginRight="10dp"
+        android:gravity="left"
+        android:textSize="15dp"
+        android:text="날짜 적는칸"/>
+    <TextView
+        android:id="@+id/separate"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/FileName"
+        android:layout_toRightOf="@id/UploadDate"
+        android:text="|"
+        android:textSize="15dp"
+        android:layout_marginRight="10dp"/>
+    <TextView
+        android:id="@+id/FileSize"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/FileName"
+        android:layout_toRightOf="@id/separate"
+        android:gravity="left"
+        android:text="크기 적는칸"
+        android:textSize="15dp"/>
+
+</RelativeLayout>
