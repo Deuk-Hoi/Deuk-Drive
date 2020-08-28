@@ -103,7 +103,7 @@ class Login : AppCompatActivity() {
             //앱을 실행시킬 때 마다 마지막 로그인 시간 수정
             var updateLastSignin = Date()
             var updateDate = hashMapOf("lastSignIn" to dateFormat.format(updateLastSignin))
-            db.collection("userinfo").document(user.displayName.toString()).update(updateDate as Map<String, Any>)
+            db.collection("UserInfo").document(user.email.toString()).update(updateDate as Map<String, Any>)
 
             //이후 앱 실행
             val intent = Intent(this, MainActivity::class.java)

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/filelistview"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="?attr/selectableItemBackground"
@@ -14,11 +15,24 @@
         android:layout_marginLeft="8dp"
         android:layout_marginTop="8dp"/>
 
+    <ImageButton
+        android:id="@+id/moreicon"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/moremenu"
+        android:background="?attr/selectableItemBackground"
+        android:clickable="true"
+        android:padding="10dp"
+        android:layout_centerVertical="true"
+        android:layout_alignParentRight="true"
+        android:visibility="gone"/>
+
     <TextView
         android:id="@+id/FileName"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_toRightOf="@id/Fileimg"
+        android:layout_toLeftOf="@id/moreicon"
         android:layout_marginTop="10dp"
         android:layout_marginBottom="10dp"
         android:layout_marginLeft="20dp"
@@ -27,6 +41,8 @@
         android:textSize="15dp"
         android:textColor="@color/black"
         android:text="파일 이름 적는칸"/>
+
+
 
     <TextView
         android:id="@+id/UploadDate"

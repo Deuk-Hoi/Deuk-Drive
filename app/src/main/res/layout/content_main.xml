@@ -13,7 +13,7 @@
     app:umanoPanelHeight="0dp"
     app:umanoOverlay="false"
     android:clickable="true"
-    app:umanoParallaxOffset="100dp"
+    app:umanoParallaxOffset="1000dp"
     app:umanoShadowHeight="4dp">
 
     <RelativeLayout
@@ -39,11 +39,17 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_below="@id/spiner">
-            
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/Fileload"
+            <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+                android:id="@+id/listRefresh"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"/>
+                android:layout_height="match_parent">
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/Fileload"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"/>
+
+            </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
         </RelativeLayout>
 
@@ -61,6 +67,7 @@
             android:layout_height="68dp"
             android:background="@drawable/blowline">
             <ImageView
+                android:id="@+id/bar"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
@@ -68,7 +75,17 @@
                 android:layout_centerHorizontal="true"
                 android:src="@drawable/bar"/>
 
+            <ImageView
+                android:id="@+id/fileicon"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_centerVertical="true"
+                android:paddingTop="5dp"
+                android:layout_marginLeft="15dp"
+                android:src="@drawable/hwp"/>
+
             <TextView
+                android:id="@+id/headertxt"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:paddingLeft="15dp"
@@ -76,6 +93,7 @@
                 android:text="새로 만들기"
                 android:paddingTop="10dp"
                 android:paddingStart="15dp"
+                android:layout_toRightOf="@id/fileicon"
                 android:layout_centerVertical="true"/>
 
         </RelativeLayout>

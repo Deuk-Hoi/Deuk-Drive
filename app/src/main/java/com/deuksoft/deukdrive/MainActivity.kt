@@ -7,13 +7,12 @@ import android.content.Intent
 import android.database.Cursor
 import android.graphics.Color
 import android.net.Uri
-import android.os.*
+import android.os.Build
+import android.os.Bundle
+import android.os.Environment
 import android.util.Log
 import android.view.*
-import android.widget.EditText
-import android.widget.FrameLayout
-import android.widget.TextView
-import android.widget.Toast
+import android.widget.*
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AlertDialog
@@ -22,17 +21,19 @@ import androidx.appcompat.widget.Toolbar
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.deuksoft.deukdrive.FileLoadManager.GetRealPath
+import com.deuksoft.deukdrive.FileUploadManager.FileUpload
 import com.deuksoft.deukdrive.ItemAdapter.BottomItemAdapter
 import com.deuksoft.deukdrive.ItemAdapter.BottomMenuItem
 import com.deuksoft.deukdrive.ItemAdapter.UserFileList
 import com.deuksoft.deukdrive.ItemAdapter.UserFileListAdapter
-import com.deuksoft.deukdrive.RetrofitManager.*
+import com.deuksoft.deukdrive.RetrofitManager.ExistFolderState
+import com.deuksoft.deukdrive.RetrofitManager.RetrofitInterface
 import com.google.android.material.navigation.NavigationView
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.SetOptions
 import com.gun0912.tedpermission.PermissionListener
 import com.gun0912.tedpermission.TedPermission
 import com.sothree.slidinguppanel.SlidingUpPanelLayout
@@ -41,20 +42,13 @@ import kotlinx.android.synthetic.main.nav_header_main.*
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import okhttp3.MediaType
-import okhttp3.MultipartBody
-import okhttp3.RequestBody
-import okhttp3.ResponseBody
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.io.File
-import java.net.URLEncoder
-import java.text.SimpleDateFormat
 import java.util.*
-import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 
 class MainActivity : AppCompatActivity(), View.OnClickListener,
@@ -66,7 +60,6 @@ class MainActivity : AppCompatActivity(), View.OnClickListener,
     lateinit var name : String
     var db : FirebaseFirestore = FirebaseFirestore.getInstance()
     lateinit var user: FirebaseUser
-    var dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -76,6 +69,22 @@ class MainActivity : AppCompatActivity(), View.OnClickListener,
         val navView: NavigationView = findViewById(R.id.nav_view)
         val nav_header_view : View = navView.getHeaderView(0)
         val userstate : TextView = nav_header_view.findViewById(R.id.userstate)
+        val listRefresh : SwipeRefreshLayout = findViewById(R.id.listRefresh)
+        listRefresh.setColorSchemeResources(
+            android.R.color.holo_blue_bright,
+            android.R.color.holo_red_light,
+            android.R.color.holo_green_light,
+            android.R.color.holo_orange_light
+        )
+
+        listRefresh.setOnRefreshListener(object : SwipeRefreshLayout.OnRefreshListener{
+            override fun onRefresh() {
+                loadUserFileList()
+                loaduserdata(user)
+                listRefresh.isRefreshing = false
+            }
+        })
+
         if(intent.hasExtra("GoogleAccount"))
         {
             user = intent.getParcelableExtra("GoogleAccount")
@@ -85,12 +94,17 @@ class MainActivity : AppCompatActivity(), View.OnClickListener,
             loaduserdata(user)
             loadUserFileList()
         }
-
         val toolbar: Toolbar = findViewById(R.id.toolbar)
         setSupportActionBar(toolbar)
         sliding_layout = findViewById(R.id.SlidingLayout)
 
-        var toggle = ActionBarDrawerToggle(this, drawerLayout,toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close)
+        var toggle = ActionBarDrawerToggle(
+            this,
+            drawerLayout,
+            toolbar,
+            R.string.navigation_drawer_open,
+            R.string.navigation_drawer_close
+        )
         drawerLayout.addDrawerListener(toggle)
         toggle.syncState()
         navView.setNavigationItemSelectedListener(this)
@@ -100,6 +114,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener,
 
     //모든 버튼 이벤트 처리부분
     override fun onClick(v: View?) {
+        Log.e("id", v.toString())
         when(v!!.id){
             R.id.userstate -> {
                 val Login = Intent(this, Login::class.java)
@@ -107,7 +122,6 @@ class MainActivity : AppCompatActivity(), View.OnClickListener,
             }
         }
     }
-
     //뒤로가기 버튼을 눌렀을 때 이벤트
     override fun onBackPressed() {
         val drawer = findViewById<DrawerLayout>(R.id.drawer_layout)
@@ -189,6 +203,8 @@ class MainActivity : AppCompatActivity(), View.OnClickListener,
 
     // SlidingUpPanelLayout의 add Icon을 클릭 하였을 때의 내부 메뉴 버튼 부분
     fun AddNewFile(){
+        headertxt.text = "새로 만들기"
+        fileicon.visibility = View.GONE
         BottomMenuItem = arrayListOf<BottomMenuItem>(
             BottomMenuItem(R.drawable.camera, "사진 촬영"),
             BottomMenuItem(R.drawable.camera, "스캔"),
@@ -202,9 +218,11 @@ class MainActivity : AppCompatActivity(), View.OnClickListener,
                }
                "업로드" -> {
                    permissionReadWrite(this)
+                   sliding_layout.setPanelState(SlidingUpPanelLayout.PanelState.COLLAPSED)
                }
            }
        }
+        Log.e("fds", itemAdapter.toString())
         itemRecycler.adapter = itemAdapter
 
         val linearManger = LinearLayoutManager(this)
@@ -231,7 +249,8 @@ class MainActivity : AppCompatActivity(), View.OnClickListener,
                 Log.e("Failed", exception.toString())
             }
         GlobalScope.launch {
-            delay(800)
+            delay(950)
+            UserFileListItem.clear()
             for(data : Map<String, Any> in list){
                 var imageFile : String
                 var extension = data!!.get("extension").toString()
@@ -256,14 +275,18 @@ class MainActivity : AppCompatActivity(), View.OnClickListener,
                 }else{
                     imageFile = "file"
                 }
-                Log.e("???"," ${imageFile}, ${FileName}, ${FileSize}, ${UploadDate}")
-                UserFileListItem.add(UserFileList(imageFile, FileName, String.format("%.1f", FileSize), UploadDate))
+                Log.e("???", " ${imageFile}, ${FileName}, ${FileSize}, ${UploadDate}")
+                UserFileListItem.add(UserFileList( imageFile, FileName, String.format("%.1f",FileSize), UploadDate ))
             }
 
             itemAdapter = UserFileListAdapter(this@MainActivity, UserFileListItem){ userFileList ->
-                Log.e("sfd","dsf")
+                clickFile(userFileList)
+                GlobalScope.launch {
+                    delay(100)
+                    sliding_layout.setPanelState(SlidingUpPanelLayout.PanelState.EXPANDED)
+                }
             }
-            runOnUiThread(object : Runnable{
+            runOnUiThread(object : Runnable {
                 override fun run() {
                     Fileload.adapter = itemAdapter
                     val linearManger = LinearLayoutManager(this@MainActivity)
@@ -272,6 +295,28 @@ class MainActivity : AppCompatActivity(), View.OnClickListener,
                 }
             })
         }
+    }
+
+    fun clickFile(userFileList: UserFileList){
+        headertxt.text = userFileList.FileName
+        fileicon.visibility = View.VISIBLE
+        val resourceId = this.resources.getIdentifier(userFileList.Fileimg,"drawable",this.packageName)
+        fileicon.setImageResource(resourceId)
+        BottomMenuItem = arrayListOf<BottomMenuItem>(
+            BottomMenuItem(R.drawable.open, "열기"),
+            BottomMenuItem(R.drawable.download, "다운로드"),
+            BottomMenuItem(R.drawable.delete, "삭제")
+        )
+        val itemAdapter = BottomItemAdapter(this, BottomMenuItem){ bottomMenuItem ->
+            when(bottomMenuItem.usetxt){
+
+            }
+        }
+        itemRecycler.adapter = itemAdapter
+
+        val linearManger = LinearLayoutManager(this)
+        itemRecycler.layoutManager = linearManger
+        itemRecycler.setHasFixedSize(true) //리스트가 바뀌었을 때 반응형으로 하기위한 코드
     }
 
     //파일 읽기 쓰기 권한 설정 다이어로그
@@ -325,73 +370,13 @@ class MainActivity : AppCompatActivity(), View.OnClickListener,
                 "FileName : ${FileName}, FileSize : ${FileSize}, extension : ${extension}, file : ${file}"
             )
             Log.e("hi", fileUri.authority!!)//파일 종류 확인 방법
-            Log.e(
-                "hello",
-                this.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS).toString()
-            )
-            sendFile(FileName, FileSize, extension, file)
-            newUpload(fileUri, user)
-            insertFileInfo(FileName, FileSize, extension)
+            Log.e("hello", this.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS).toString())
 
-        }
-    }
-    //파일 업로드 구간
-    fun newUpload(fileUri: Uri, user: FirebaseUser){
-        val retrofit = Retrofit.Builder()
-            .baseUrl("http://118.42.168.26:3000/")
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-        try{
-            var service = retrofit.create(RetrofitInterface::class.java)
-            var a = getRealPathFromURI(this, fileUri)
-            var file = File(a)
-            Log.e("asddasdasds", file.path)
-            var requestFile : RequestBody = RequestBody.create(
-                MediaType.parse(
-                    contentResolver.getType(
-                        fileUri
-                    )
-                ), file
-            )
-            //val encodedFileName = Base64.encodeToString(file.name.toByteArray(Charsets.UTF_8), Base64.NO_WRAP)
-            var body : MultipartBody.Part = MultipartBody.Part.createFormData(
-                "myFile", URLEncoder.encode(
-                    file.name,
-                    "utf-8"
-                ), requestFile
-            )
-            var filename : RequestBody = RequestBody.create(
-                MediaType.parse("multipart/form-data"),
-                file.name
-            )
-            var name : RequestBody = RequestBody.create(
-                MediaType.parse("multipart/form-data"),
-                "myFile"
-            )
-            var saveUser : RequestBody = RequestBody.create(
-                MediaType.parse("multipart/form-data"),
-                user.email
-            )
-            var call : Call<ResponseBody> = service.upload(filename, saveUser, name, body)
-            call.enqueue(object : Callback<ResponseBody> {
-                override fun onResponse(
-                    call: Call<ResponseBody>,
-                    response: Response<ResponseBody>
-                ) {
-                    Log.e("call", response.message())
-                    if (response.code() == 200) {
-                        Log.e("hello", "Succecss")
-                    }
-                }
-
-                override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
-                    Log.e("error", t.message)
-                }
-            })
-        }catch (e: java.lang.Exception){
-            var toast = Toast.makeText(this, "내장메모리로 접근하여 사용해 주세요.", Toast.LENGTH_SHORT)
-            toast.setGravity(Gravity.TOP, 0, 200)
-            toast.show()
+            var fileUpload = FileUpload()
+            fileUpload.sendFile(FileName, FileSize, extension, file)
+            fileUpload.newUpload(fileUri, user, this)
+            fileUpload.insertFileInfo(FileName, FileSize, extension, user, db)
+            fileUpload.filesizeupdate(FileSize, user, db)
         }
     }
 
@@ -434,35 +419,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener,
 
     }
 
-    //파일의 정보 서버로 보내는 구간
-    fun sendFile(FileName: String, FileSize: String, extension: String, file: File){
-        val retrofit = Retrofit.Builder()
-            .baseUrl("http://118.42.168.26:3000/driveMain/uploadFile/")
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
 
-        val service = retrofit.create(RetrofitInterface::class.java)
-        val fileinfo = HashMap<String, String>()
-        fileinfo.put("FileName", FileName);
-        fileinfo.put("FileSize", FileSize);
-        fileinfo.put("extension", extension);
-        val body = HashMap<String, HashMap<String, String>>()
-        body.put("accepted", fileinfo)
-
-        service.uploadData(body).enqueue(object : Callback<FileData> {
-            override fun onFailure(call: Call<FileData>, t: Throwable) {
-                Log.d("CometChatAPI::", "Failed API call with call: ${call} exception: ${t}")
-            }
-
-            override fun onResponse(call: Call<FileData>, response: Response<FileData>) {
-                try {
-                    Log.d("Responce::", response.message())
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
-            }
-        })
-    }
 
     //각 User마다 저장할 사용자 이름의 폴더가 있는지 검사하는 부분 없으면 생성.
     fun ExistUserFolder(foldername: String){
@@ -480,7 +437,10 @@ class MainActivity : AppCompatActivity(), View.OnClickListener,
                 Log.e("message", t.message)
             }
 
-            override fun onResponse(call: Call<ExistFolderState>, response: Response<ExistFolderState>){
+            override fun onResponse(
+                call: Call<ExistFolderState>,
+                response: Response<ExistFolderState>
+            ) {
                 try {
                     val existFolderState = response.body()
                     Log.d("Responce::", existFolderState!!.state)
@@ -506,8 +466,11 @@ class MainActivity : AppCompatActivity(), View.OnClickListener,
                     full = full / 1073741824
 
                     var use = full - free
-
-                    freedisk.setText(String.format("%.1f", use) + "GB")
+                    Log.e("free",free.toString())
+                    Log.e("use",use.toString())
+                    Log.e("full",full.toString())
+                    freedisk.text = String.format("%.1f", use) + "GB"
+                    Log.e("freeeeeeee",freedisk.text.toString())
                     fulldisk.setText(full.toInt().toString() + "GB")
                     diskprogressbar.setMax(full.toInt())
                     diskprogressbar.setProgress(use.toInt())
@@ -519,38 +482,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener,
             .addOnFailureListener{ exception ->
                 Log.e("Failed", exception.toString())
             }
-
-        /*var list : ArrayList<Map<String, Any>> = arrayListOf()
-        db.collection("FileInfo").document(user.email.toString())
-            .collection("Files")
-            .get()
-            .addOnSuccessListener { result ->
-                for(document in result){
-                    var data = document.data
-                    list.add(data)
-                    Log.e("??", data.get("extension").toString())
-                }
-            }
-            .addOnFailureListener{ exception ->
-                Log.e("Failed", exception.toString())
-            }*/
     }
 
-    fun insertFileInfo(FileName: String, FileSize: String, extension: String){
 
-        var fileinfo = hashMapOf(
-            "UserName" to user.displayName,
-            "FileName" to FileName,
-            "FileSize" to FileSize,
-            "extension" to extension,
-            "FilePath" to "upload/${user.email}/",
-            "UploadDate" to dateFormat.format(Date())
-        )
-
-        db.collection("FileInfo").document(user.email.toString())
-            .collection("Files").document(FileName)
-            .set(fileinfo, SetOptions.merge()) // 문서가 있는지 확실하지 않은 경우 전체 문서를 실수로 덮어쓰지 않도록 새 데이터를 기존 문서와 병합하는 옵션
-            .addOnSuccessListener { Log.d("Success", "DocumentSnapshot successfully written!") }
-            .addOnFailureListener { e -> Log.w("Failed", "Error writing document", e) }
-    }
 }
