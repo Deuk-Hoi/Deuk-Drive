@@ -1,6 +1,5 @@
 package com.deuksoft.deukdrive
 
-
 import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
@@ -49,6 +48,7 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.io.File
 import java.util.*
+import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 
 class MainActivity : AppCompatActivity(), View.OnClickListener,
@@ -60,6 +60,9 @@ class MainActivity : AppCompatActivity(), View.OnClickListener,
     lateinit var name : String
     var db : FirebaseFirestore = FirebaseFirestore.getInstance()
     lateinit var user: FirebaseUser
+    lateinit var FilePath : String
+    var PathStack : Stack<String> = Stack()
+    val linearManger = LinearLayoutManager(this)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -88,9 +91,10 @@ class MainActivity : AppCompatActivity(), View.OnClickListener,
         if(intent.hasExtra("GoogleAccount"))
         {
             user = intent.getParcelableExtra("GoogleAccount")
-            ExistUserFolder(user.email.toString())
+            ExistUserFolder(user.email.toString(),"init")
             userstate.text = "${user.displayName}님 환영합니다."
             Log.e("privite?", user.email)
+            FilePath = "upload/${user.email}/"
             loaduserdata(user)
             loadUserFileList()
         }
@@ -131,6 +135,9 @@ class MainActivity : AppCompatActivity(), View.OnClickListener,
         else if(sliding_layout.panelState == SlidingUpPanelLayout.PanelState.EXPANDED)
         {
             sliding_layout.setPanelState(SlidingUpPanelLayout.PanelState.COLLAPSED)
+        }else if(!PathStack.isEmpty()){
+            FilePath = PathStack.pop()
+            loadUserFileList()
         }else{
             finishAffinity() //어플리케이션 완전히 종료
         }
@@ -214,7 +221,8 @@ class MainActivity : AppCompatActivity(), View.OnClickListener,
        val itemAdapter = BottomItemAdapter(this, BottomMenuItem){ bottomMenuItem ->
            when(bottomMenuItem.usetxt){
                "폴더 만들기" -> {
-                   makeFolderDialog()
+                   var currentFolder = FilePath.split("upload/")
+                   makeFolderDialog(currentFolder[1])
                }
                "업로드" -> {
                    permissionReadWrite(this)
@@ -232,69 +240,97 @@ class MainActivity : AppCompatActivity(), View.OnClickListener,
 
     //저장된 파일 불러오는 부분
     fun loadUserFileList(){
-
         var list : ArrayList<Map<String, Any>> = arrayListOf()
-        var itemAdapter : UserFileListAdapter
+        list.clear()
+        UserFileListItem.clear()
+        linearManger.removeAllViews() //리사이클러뷰는 레이아웃메니저 안에 내용을 전체 삭제해주고 다시 입력해야한다.
         db.collection("FileInfo").document(user.email.toString())
             .collection("Files")
             .get()
             .addOnSuccessListener { result ->
+                var Filelog = result.documents
+                //FilePath = Filelog.get(0).data!!.get("FilePath").toString() //현재 로드된 파일의 경로 확인
                 for(document in result){
                     var data = document.data
-                    list.add(data)
-                    Log.e("??", data.get("extension").toString())
+                    if(data.get("FilePath").toString().equals(FilePath)){
+                        list.add(data)
+                        Log.e("??", data.get("extension").toString())
+                        loadList(list)
+                    }
                 }
             }
             .addOnFailureListener{ exception ->
                 Log.e("Failed", exception.toString())
             }
-        GlobalScope.launch {
-            delay(950)
-            UserFileListItem.clear()
-            for(data : Map<String, Any> in list){
-                var imageFile : String
-                var extension = data!!.get("extension").toString()
-                var FileName = data!!.get("FileName").toString()
-                var UploadDate = data!!.get("UploadDate").toString()
-                var FileSize = (data!!.get("FileSize").toString()).toDouble()
-
-                FileSize = FileSize / 1048576
-
-                if(extension.equals("doc")||extension.equals("docx")){
-                    imageFile = "doc"
-                }else if(extension.equals("ppt")||extension.equals("pptx")){
-                    imageFile = "ppt"
-                }else if(extension.equals("xls")||extension.equals("xlsx")){
-                    imageFile = "xls"
-                }else if(extension.equals("jpg")||extension.equals("png")||extension.equals("jpeg")||extension.equals("gif")){
-                    imageFile = "photo"
-                }else if(extension.equals("pdf")){
-                    imageFile = "pdf"
-                }else if(extension.equals("hwp")){
-                    imageFile = "hwp"
-                }else{
-                    imageFile = "file"
-                }
-                Log.e("???", " ${imageFile}, ${FileName}, ${FileSize}, ${UploadDate}")
-                UserFileListItem.add(UserFileList( imageFile, FileName, String.format("%.1f",FileSize), UploadDate ))
+    }
+    fun loadList(list : ArrayList<Map<String, Any>>) {
+        var itemAdapter : UserFileListAdapter
+        UserFileListItem.clear()
+        for (data: Map<String, Any> in list) {
+            var imageFile: String
+            var extension = data!!.get("extension").toString()
+            var FileName: String
+            if (extension.equals("dir")) {
+                FileName = data!!.get("DirName").toString()
+            } else {
+                FileName = data!!.get("FileName").toString()
             }
+            var UploadDate = data!!.get("UploadDate").toString()
+            var FileSize = (data!!.get("FileSize").toString()).toDouble()
 
-            itemAdapter = UserFileListAdapter(this@MainActivity, UserFileListItem){ userFileList ->
+            FileSize = FileSize / 1048576
+
+            if (extension.equals("doc") || extension.equals("docx")) {
+                imageFile = "doc"
+            } else if (extension.equals("ppt") || extension.equals("pptx")) {
+                imageFile = "ppt"
+            } else if (extension.equals("xls") || extension.equals("xlsx")) {
+                imageFile = "xls"
+            } else if (extension.equals("jpg") || extension.equals("png") || extension.equals("jpeg") || extension.equals("gif")) {
+                imageFile = "photo"
+            } else if (extension.equals("pdf")) {
+                imageFile = "pdf"
+            } else if (extension.equals("hwp")) {
+                imageFile = "hwp"
+            } else if (extension.equals("dir")) {
+                imageFile = "folders"
+            } else {
+                imageFile = "file"
+            }
+            Log.e("???", " ${imageFile}, ${FileName}, ${FileSize}, ${UploadDate}")
+            UserFileListItem.add(
+                UserFileList(
+                    imageFile,
+                    FileName,
+                    String.format("%.1f", FileSize),
+                    UploadDate
+                )
+            )
+        }
+
+        itemAdapter = UserFileListAdapter(this@MainActivity, UserFileListItem) { userFileList ->
+            Log.e("fileEx" ,userFileList.Fileimg)
+            if(userFileList.Fileimg.equals("folders")){
+                PathStack.push(FilePath)
+                FilePath += "${userFileList.FileName}/"
+                Log.e("path", FilePath)
+                loadUserFileList()
+            }else{
                 clickFile(userFileList)
                 GlobalScope.launch {
                     delay(100)
                     sliding_layout.setPanelState(SlidingUpPanelLayout.PanelState.EXPANDED)
                 }
             }
-            runOnUiThread(object : Runnable {
-                override fun run() {
-                    Fileload.adapter = itemAdapter
-                    val linearManger = LinearLayoutManager(this@MainActivity)
-                    Fileload.layoutManager = linearManger
-                    Fileload.setHasFixedSize(true) //리스트가 바뀌었을 때 반응형으로 하기위한 코드
-                }
-            })
         }
+        runOnUiThread(object : Runnable {
+            override fun run() {
+                Fileload.adapter = itemAdapter
+                Fileload.layoutManager = linearManger
+                Fileload.setHasFixedSize(true) //리스트가 바뀌었을 때 반응형으로 하기위한 코드
+                itemAdapter.notifyDataSetChanged()
+            }
+        })
     }
 
     fun clickFile(userFileList: UserFileList){
@@ -374,14 +410,14 @@ class MainActivity : AppCompatActivity(), View.OnClickListener,
 
             var fileUpload = FileUpload()
             fileUpload.sendFile(FileName, FileSize, extension, file)
-            fileUpload.newUpload(fileUri, user, this)
-            fileUpload.insertFileInfo(FileName, FileSize, extension, user, db)
+            fileUpload.newUpload(fileUri, FilePath, this)
+            fileUpload.insertFileInfo(FileName, FileSize, extension, user, db, FilePath)
             fileUpload.filesizeupdate(FileSize, user, db)
         }
     }
 
     //새폴더를 생성할 때 나오는 Dialog생성 부분
-    fun makeFolderDialog(){
+    fun makeFolderDialog(currentFolder : String){
         val foldername : EditText = EditText(this)
         val container : FrameLayout = FrameLayout(this)
         foldername.setTextColor(Color.WHITE)
@@ -402,9 +438,9 @@ class MainActivity : AppCompatActivity(), View.OnClickListener,
                 when(select){
                     DialogInterface.BUTTON_POSITIVE -> {
                         name = foldername.text.toString()
-                        Log.e("Filename", name)
+                        ExistUserFolder("${currentFolder}${name}", "dir")
                         GlobalScope.launch {
-                            delay(100)
+                            delay(300)
                             sliding_layout.setPanelState(SlidingUpPanelLayout.PanelState.COLLAPSED)
                         }
                     }
@@ -422,7 +458,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener,
 
 
     //각 User마다 저장할 사용자 이름의 폴더가 있는지 검사하는 부분 없으면 생성.
-    fun ExistUserFolder(foldername: String){
+    fun ExistUserFolder(foldername: String, action : String){
         val retrofit = Retrofit.Builder()
             .baseUrl("http://118.42.168.26:3000/")
             .addConverterFactory(GsonConverterFactory.create())
@@ -437,13 +473,19 @@ class MainActivity : AppCompatActivity(), View.OnClickListener,
                 Log.e("message", t.message)
             }
 
-            override fun onResponse(
-                call: Call<ExistFolderState>,
-                response: Response<ExistFolderState>
-            ) {
+            override fun onResponse(call: Call<ExistFolderState>, response: Response<ExistFolderState>) {
                 try {
                     val existFolderState = response.body()
                     Log.d("Responce::", existFolderState!!.state)
+                    if(existFolderState!!.state.equals("1")){
+                        if(action.equals("dir")){
+                            var fileUpload = FileUpload()
+                            fileUpload.insertDirInfo(name,"${FilePath}${name}/",user, db, FilePath)
+                            Toast.makeText(this@MainActivity,"폴더 생성 완료",Toast.LENGTH_SHORT).show()
+                        }else{
+                            Toast.makeText(this@MainActivity,"이미 존재 하는 폴더 입니다.",Toast.LENGTH_SHORT).show()
+                        }
+                    }
                 } catch (e: Exception) {
                     e.printStackTrace()
                 }
@@ -484,5 +526,5 @@ class MainActivity : AppCompatActivity(), View.OnClickListener,
             }
     }
 
-
 }
+

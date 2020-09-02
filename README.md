@@ -11,3 +11,4 @@ Kotlin을 사용할 예정이고 서버는 Node.js를 사용하여 Android와 �
  엑셀, 파워포인트, 워드 : https://www.iconfinder.com/iconsets/logos-microsoft-office-365
  한글 : https://www.iconfinder.com/iconsets/document-file-formats-2
  일반파일, 사진 아이콘 : https://www.iconfinder.com/iconsets/small-n-flat
+ 폴더 아이콘 : https://www.iconfinder.com/iconsets/thesquid-ink-40-free-flat-icon-pack

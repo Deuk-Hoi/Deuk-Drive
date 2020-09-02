@@ -61,7 +61,8 @@ class FileUpload {
     }
 
     //파일 업로드 구간
-    fun newUpload(fileUri: Uri, user: FirebaseUser, context: Context){
+    fun newUpload(fileUri: Uri, Path: String , context: Context){
+        var currentFolder = Path.split("upload/")
         val retrofit = Retrofit.Builder()
             .baseUrl("http://118.42.168.26:3000/")
             .addConverterFactory(GsonConverterFactory.create())
@@ -76,7 +77,7 @@ class FileUpload {
             var body : MultipartBody.Part = MultipartBody.Part.createFormData("myFile", URLEncoder.encode(file.name,"utf-8"), requestFile)
             var filename : RequestBody = RequestBody.create(MediaType.parse("multipart/form-data"),file.name)
             var name : RequestBody = RequestBody.create(MediaType.parse("multipart/form-data"),"myFile")
-            var saveUser : RequestBody = RequestBody.create( MediaType.parse("multipart/form-data"),user.email)
+            var saveUser : RequestBody = RequestBody.create( MediaType.parse("multipart/form-data"),currentFolder[1])
             var call : Call<ResponseBody> = service.upload(filename, saveUser, name, body)
 
             call.enqueue(object : Callback<ResponseBody> {
@@ -98,20 +99,41 @@ class FileUpload {
         }
     }
 
-    fun insertFileInfo(FileName: String, FileSize: String, extension: String, user: FirebaseUser, db : FirebaseFirestore){
+    fun insertFileInfo(FileName: String, FileSize: String, extension: String, user: FirebaseUser, db : FirebaseFirestore, Path: String){
         var dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
         var fileinfo = hashMapOf(
             "UserName" to user.displayName,
             "FileName" to FileName,
             "FileSize" to FileSize,
             "extension" to extension,
-            "FilePath" to "upload/${user.email}/",
+            "FilePath" to Path,
             "UploadDate" to dateFormat.format(Date())
         )
 
         db.collection("FileInfo").document(user.email.toString())
-            .collection("Files").document(FileName)
-            .set(fileinfo, SetOptions.merge()) // 문서가 있는지 확실하지 않은 경우 전체 문서를 실수로 덮어쓰지 않도록 새 데이터를 기존 문서와 병합하는 옵션
+            .collection("Files")
+            .add(fileinfo) // 문서가 있는지 확실하지 않은 경우 전체 문서를 실수로 덮어쓰지 않도록 새 데이터를 기존 문서와 병합하는 옵션
+            .addOnSuccessListener { Log.d("Success", "DocumentSnapshot successfully written!") }
+            .addOnFailureListener { e -> Log.w("Failed", "Error writing document", e) }
+    }
+
+    fun insertDirInfo(DirName: String, DirPath : String,  user: FirebaseUser, db : FirebaseFirestore, Path: String){
+        var dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+        var fileinfo = hashMapOf(
+            "UserName" to user.displayName,
+            "DirName" to DirName,
+            "FileSize" to 0,
+            "extension" to "dir",
+            "DirPath" to DirPath,
+            "FilePath" to Path,
+            "UploadDate" to dateFormat.format(Date())
+        )
+
+        db.collection("FileInfo").document(user.email.toString())
+            .collection("Files")
+            //.collection("Files").document(DirName) //파일 이름 보이게 하는법
+            //.set(fileinfo, SetOptions.merge()) // 문서가 있는지 확실하지 않은 경우 전체 문서를 실수로 덮어쓰지 않도록 새 데이터를 기존 문서와 병합하는 옵션
+            .add(fileinfo)
             .addOnSuccessListener { Log.d("Success", "DocumentSnapshot successfully written!") }
             .addOnFailureListener { e -> Log.w("Failed", "Error writing document", e) }
     }
