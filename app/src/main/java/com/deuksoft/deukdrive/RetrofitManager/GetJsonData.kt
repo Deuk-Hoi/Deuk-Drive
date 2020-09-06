@@ -16,6 +16,8 @@ data class GetFileInfo(
 
 data class ExistFolderState(var state : String)
 
+
+
 /*data class FileData(var data : Accepted)
 data class Accepted(var accepted: GetFileInfo)
 data class GetFileInfo(

@@ -1,5 +1,6 @@
 package com.deuksoft.deukdrive
 
+import android.app.DownloadManager
 import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
@@ -17,10 +18,12 @@ import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
+import androidx.core.content.ContextCompat
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+import com.deuksoft.deukdrive.FileDownloadManager.FileDownload
 import com.deuksoft.deukdrive.FileLoadManager.GetRealPath
 import com.deuksoft.deukdrive.FileUploadManager.FileUpload
 import com.deuksoft.deukdrive.ItemAdapter.BottomItemAdapter
@@ -38,6 +41,7 @@ import com.gun0912.tedpermission.TedPermission
 import com.sothree.slidinguppanel.SlidingUpPanelLayout
 import kotlinx.android.synthetic.main.content_main.*
 import kotlinx.android.synthetic.main.nav_header_main.*
+import kotlinx.android.synthetic.main.userfilelistlayout.*
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -63,11 +67,13 @@ class MainActivity : AppCompatActivity(), View.OnClickListener,
     lateinit var FilePath : String
     var PathStack : Stack<String> = Stack()
     val linearManger = LinearLayoutManager(this)
+    lateinit var downloadManager : DownloadManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        downloadManager =  getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
         val drawerLayout: DrawerLayout = findViewById(R.id.drawer_layout)
         val navView: NavigationView = findViewById(R.id.nav_view)
         val nav_header_view : View = navView.getHeaderView(0)
@@ -344,8 +350,15 @@ class MainActivity : AppCompatActivity(), View.OnClickListener,
             BottomMenuItem(R.drawable.delete, "삭제")
         )
         val itemAdapter = BottomItemAdapter(this, BottomMenuItem){ bottomMenuItem ->
+            var fileDownload = FileDownload()
             when(bottomMenuItem.usetxt){
-
+                "열기" ->{
+                    fileDownload.FileOpen(this, FilePath, userFileList.FileName)
+                    Log.e("!?!?", getExternalFilesDir(null).toString());
+                }
+                "다운로드" ->{
+                    fileDownload.DownloadFile(this, FilePath, userFileList.FileName, downloadManager)
+                }
             }
         }
         itemRecycler.adapter = itemAdapter
