@@ -9,6 +9,7 @@ import android.util.Log
 import androidx.core.content.ContextCompat.getSystemService
 import androidx.core.content.ContextCompat.startActivity
 import com.deuksoft.deukdrive.ImageFreeView
+import com.deuksoft.deukdrive.MainActivity
 import java.io.File
 
 
@@ -21,9 +22,9 @@ class FileDownload {
         startActivity(context, intent, null)
     }
 
-    fun DownloadFile(context: Context, filePath : String, fileName : String, downloadManager: DownloadManager) {
+    fun DownloadFile( filePath: String, fileName: String, downloadManager: DownloadManager) {
         var downloadId : Long = -1L
-        val file = File("/storage/emulated/0/DeukDrive/", fileName)
+        val file = File("/storage/emulated/0/Deuk Drive/", fileName)
         val fileurl = "http://118.42.168.26:3000/${filePath}${fileName}"
 
         val request = DownloadManager.Request(Uri.parse(fileurl))

@@ -33,7 +33,7 @@ class FileUpload {
     //파일의 정보 서버로 보내는 구간
     fun sendFile(FileName: String, FileSize: String, extension: String, file: File){
         val retrofit = Retrofit.Builder()
-            .baseUrl("http://118.42.168.26:3000/driveMain/uploadFile/")
+            .baseUrl("http://118.42.168.26:3000/")
             .addConverterFactory(GsonConverterFactory.create())
             .build()
 
@@ -139,13 +139,16 @@ class FileUpload {
     }
 
     fun filesizeupdate(FileSize: String, user: FirebaseUser, db : FirebaseFirestore){
-        var userfilesize = 0L
         db.collection("UserInfo").document(user.email.toString())
             .get()
             .addOnSuccessListener { document ->
                 if(document != null){
                     var data = document.data
-                    userfilesize = (data!!.get("freesize").toString()).toLong()
+                    var userfilesize = ((data!!.get("freesize").toString()).toLong() - FileSize.toLong())
+                    var filesize = hashMapOf(
+                        "freesize" to userfilesize
+                    )
+                    db.collection("UserInfo").document(user.email.toString()).update(filesize as Map<String, Long>)
                 }else{
                     Log.d("data", "No such document")
                 }
@@ -153,15 +156,6 @@ class FileUpload {
             .addOnFailureListener{ exception ->
                 Log.e("Failed", exception.toString())
             }
-
-        GlobalScope.launch {
-            delay(500)
-            userfilesize = (userfilesize - FileSize.toLong())
-            var filesize = hashMapOf(
-                "freesize" to userfilesize
-            )
-            db.collection("UserInfo").document(user.email.toString()).update(filesize as Map<String, Long>)
-        }
     }
 }
 

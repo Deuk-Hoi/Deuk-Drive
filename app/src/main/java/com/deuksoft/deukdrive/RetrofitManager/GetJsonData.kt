@@ -16,12 +16,4 @@ data class GetFileInfo(
 
 data class ExistFolderState(var state : String)
 
-
-
-/*data class FileData(var data : Accepted)
-data class Accepted(var accepted: GetFileInfo)
-data class GetFileInfo(
-    var filename : String,
-    var extension : String,
-    var filesize : String
-)*/
+data class RemoveFile(var FilePath : HashMap<String, String>, var state: String)

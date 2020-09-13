@@ -18,13 +18,13 @@ import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
-import androidx.core.content.ContextCompat
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.deuksoft.deukdrive.FileDownloadManager.FileDownload
 import com.deuksoft.deukdrive.FileLoadManager.GetRealPath
+import com.deuksoft.deukdrive.FileRemoveManager.FileRemove
 import com.deuksoft.deukdrive.FileUploadManager.FileUpload
 import com.deuksoft.deukdrive.ItemAdapter.BottomItemAdapter
 import com.deuksoft.deukdrive.ItemAdapter.BottomMenuItem
@@ -36,12 +36,12 @@ import com.google.android.material.navigation.NavigationView
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.QuerySnapshot
 import com.gun0912.tedpermission.PermissionListener
 import com.gun0912.tedpermission.TedPermission
 import com.sothree.slidinguppanel.SlidingUpPanelLayout
 import kotlinx.android.synthetic.main.content_main.*
 import kotlinx.android.synthetic.main.nav_header_main.*
-import kotlinx.android.synthetic.main.userfilelistlayout.*
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -99,7 +99,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener,
             user = intent.getParcelableExtra("GoogleAccount")
             ExistUserFolder(user.email.toString(),"init")
             userstate.text = "${user.displayName}님 환영합니다."
-            Log.e("privite?", user.email)
+            //Log.e("privite?", user.email)
             FilePath = "upload/${user.email}/"
             loaduserdata(user)
             loadUserFileList()
@@ -184,7 +184,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener,
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
         when(item.itemId){
             R.id.nav_home -> {
-                Log.e("fsdf", "hellop")
+                //Log.e("fsdf", "hellop")
             }
             R.id.logout -> {
                 FirebaseAuth.getInstance().signOut()
@@ -236,7 +236,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener,
                }
            }
        }
-        Log.e("fds", itemAdapter.toString())
+        //Log.e("fds", itemAdapter.toString())
         itemRecycler.adapter = itemAdapter
 
         val linearManger = LinearLayoutManager(this)
@@ -260,7 +260,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener,
                     var data = document.data
                     if(data.get("FilePath").toString().equals(FilePath)){
                         list.add(data)
-                        Log.e("??", data.get("extension").toString())
+                        //Log.e("??", data.get("extension").toString())
                         loadList(list)
                     }
                 }
@@ -303,7 +303,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener,
             } else {
                 imageFile = "file"
             }
-            Log.e("???", " ${imageFile}, ${FileName}, ${FileSize}, ${UploadDate}")
+            //Log.e("???", " ${imageFile}, ${FileName}, ${FileSize}, ${UploadDate}")
             UserFileListItem.add(
                 UserFileList(
                     imageFile,
@@ -315,7 +315,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener,
         }
 
         itemAdapter = UserFileListAdapter(this@MainActivity, UserFileListItem) { userFileList ->
-            Log.e("fileEx" ,userFileList.Fileimg)
+            //Log.e("fileEx" ,userFileList.Fileimg)
             if(userFileList.Fileimg.equals("folders")){
                 PathStack.push(FilePath)
                 FilePath += "${userFileList.FileName}/"
@@ -354,10 +354,16 @@ class MainActivity : AppCompatActivity(), View.OnClickListener,
             when(bottomMenuItem.usetxt){
                 "열기" ->{
                     fileDownload.FileOpen(this, FilePath, userFileList.FileName)
-                    Log.e("!?!?", getExternalFilesDir(null).toString());
+                    //Log.e("!?!?", getExternalFilesDir(null).toString())
+                    sliding_layout.setPanelState(SlidingUpPanelLayout.PanelState.COLLAPSED)
                 }
                 "다운로드" ->{
-                    fileDownload.DownloadFile(this, FilePath, userFileList.FileName, downloadManager)
+                    fileDownload.DownloadFile(FilePath, userFileList.FileName, downloadManager)
+                    sliding_layout.setPanelState(SlidingUpPanelLayout.PanelState.COLLAPSED)
+                }
+                "삭제" -> {
+                    FileRemove().removeFile(this, FilePath, userFileList.FileName, user, db)
+                    sliding_layout.setPanelState(SlidingUpPanelLayout.PanelState.COLLAPSED)
                 }
             }
         }

@@ -32,5 +32,10 @@ interface RetrofitInterface{
         @Body foldername : HashMap<String, String>
     ):Call<ExistFolderState>
 
+    @Headers("accept: application/json","content-type: application/json")
+    @POST("/driveMain/removeFile")
+    fun removeFile(
+        @Body FilePath : HashMap<String, String>
+    ):Call<RemoveFile>
 
 }
