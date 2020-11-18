@@ -1,6 +1,7 @@
 package com.deuksoft.deukdrive.ItemAdapter
 
 import android.content.Context
+import android.content.DialogInterface
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -9,19 +10,20 @@ import android.widget.AdapterView.OnItemClickListener
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.appcompat.app.AlertDialog
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.deuksoft.deukdrive.FileRemoveManager.FileRemove
+import com.deuksoft.deukdrive.MainActivity
 import com.deuksoft.deukdrive.R
+import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.android.synthetic.main.content_main.*
 
 
-class UserFileListAdapter(
-    val context: Context,
-    val filelist: ArrayList<UserFileList>,
-    val itemClick: (UserFileList) -> Unit
-) : RecyclerView.Adapter<UserFileListAdapter.Holder>(){
+class UserFileListAdapter(var context: Context,var filelist: ArrayList<UserFileList>, var itemClick: (UserFileList) -> Unit): RecyclerView.Adapter<UserFileListAdapter.Holder>(){
 
-    inner class Holder(itemView: View, itemClick: (UserFileList) -> Unit): RecyclerView.ViewHolder(itemView){
+    inner class Holder(itemView: View, itemClick: (UserFileList) -> Unit?): RecyclerView.ViewHolder(itemView){
         var Fileimg = itemView.findViewById<ImageView>(R.id.Fileimg)
         var FileName = itemView.findViewById<TextView>(R.id.FileName)
         var UploadDate = itemView.findViewById<TextView>(R.id.UploadDate)
@@ -51,9 +53,14 @@ class UserFileListAdapter(
                 //Log.e("Image", userFileList.Fileimg)
 
             })
-
+            /*itemView.setOnLongClickListener(View.OnLongClickListener {
+                Log.e("Image", userFileList.FileName)
+                Log.e("FilePath", userFileList.FilePath)
+                var m = MainActivity()
+                m.removeFile(context, userFileList.FilePath, userFileList.FileName, userFileList)
+                true
+            })*/
         }
-
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): Holder {
@@ -68,5 +75,6 @@ class UserFileListAdapter(
     override fun getItemCount(): Int {
         return filelist.size
     }
+
 
 }

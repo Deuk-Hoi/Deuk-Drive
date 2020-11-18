@@ -1,13 +1,23 @@
 package com.deuksoft.deukdrive.ItemAdapter
 
+import android.app.DownloadManager
 import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.deuksoft.deukdrive.FileDownloadManager.FileDownload
+import com.deuksoft.deukdrive.FileRemoveManager.FileRemove
+import com.deuksoft.deukdrive.MainActivity
 import com.deuksoft.deukdrive.R
+import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.firestore.FirebaseFirestore
+import com.sothree.slidinguppanel.SlidingUpPanelLayout
+import kotlinx.android.synthetic.main.content_main.*
+import kotlinx.android.synthetic.main.content_main.view.*
 
 class BottomItemAdapter (val context: Context, val itemlist : ArrayList<BottomMenuItem>, val itemClick : (BottomMenuItem)-> Unit): RecyclerView.Adapter<BottomItemAdapter.Holder>(){
 

@@ -19,6 +19,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.view.GravityCompat
+import androidx.core.view.get
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
@@ -36,6 +37,7 @@ import com.google.android.material.navigation.NavigationView
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.QuerySnapshot
 import com.gun0912.tedpermission.PermissionListener
 import com.gun0912.tedpermission.TedPermission
@@ -56,7 +58,7 @@ import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 
 class MainActivity : AppCompatActivity(), View.OnClickListener,
-    NavigationView.OnNavigationItemSelectedListener {
+    NavigationView.OnNavigationItemSelectedListener,AdapterView.OnItemSelectedListener {
 
     lateinit var sliding_layout : SlidingUpPanelLayout
     lateinit var BottomMenuItem : ArrayList<BottomMenuItem> //SlidingUpPanelLayout 아이템 리스트 저장
@@ -68,6 +70,9 @@ class MainActivity : AppCompatActivity(), View.OnClickListener,
     var PathStack : Stack<String> = Stack()
     val linearManger = LinearLayoutManager(this)
     lateinit var downloadManager : DownloadManager
+    var SpinnerSeleted : Int = 0
+    var field : String = "FileName"
+    var sort : String = "asc"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -76,6 +81,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener,
         downloadManager =  getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
         val drawerLayout: DrawerLayout = findViewById(R.id.drawer_layout)
         val navView: NavigationView = findViewById(R.id.nav_view)
+        var listsort : Spinner = findViewById(R.id.listsort)
         val nav_header_view : View = navView.getHeaderView(0)
         val userstate : TextView = nav_header_view.findViewById(R.id.userstate)
         val listRefresh : SwipeRefreshLayout = findViewById(R.id.listRefresh)
@@ -88,7 +94,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener,
 
         listRefresh.setOnRefreshListener(object : SwipeRefreshLayout.OnRefreshListener{
             override fun onRefresh() {
-                loadUserFileList()
+                loadUserFileList(field, sort)
                 loaduserdata(user)
                 listRefresh.isRefreshing = false
             }
@@ -102,7 +108,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener,
             //Log.e("privite?", user.email)
             FilePath = "upload/${user.email}/"
             loaduserdata(user)
-            loadUserFileList()
+            loadUserFileList(field, sort)
         }
         val toolbar: Toolbar = findViewById(R.id.toolbar)
         setSupportActionBar(toolbar)
@@ -120,6 +126,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener,
         navView.setNavigationItemSelectedListener(this)
 
         userstate.setOnClickListener(this)
+        listsort.setOnItemSelectedListener(this)
     }
 
     //모든 버튼 이벤트 처리부분
@@ -132,6 +139,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener,
             }
         }
     }
+
     //뒤로가기 버튼을 눌렀을 때 이벤트
     override fun onBackPressed() {
         val drawer = findViewById<DrawerLayout>(R.id.drawer_layout)
@@ -143,7 +151,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener,
             sliding_layout.setPanelState(SlidingUpPanelLayout.PanelState.COLLAPSED)
         }else if(!PathStack.isEmpty()){
             FilePath = PathStack.pop()
-            loadUserFileList()
+            loadUserFileList(field, sort)
         }else{
             finishAffinity() //어플리케이션 완전히 종료
         }
@@ -212,6 +220,45 @@ class MainActivity : AppCompatActivity(), View.OnClickListener,
         return true
     }
 
+    //Spinner 이벤트 부분
+    override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+        var sort = listsort.selectedItem.toString()
+        when(sort){
+            "오름차순 정렬" ->{
+                this.field = "FileName"
+                this.sort = "asc"
+            }
+            "내림차순 정렬" ->{
+                this.field = "FileName"
+                this.sort = "desc"
+            }
+            "최신 항목순" ->{
+                this.field = "UploadDate"
+                this.sort = "desc"
+            }
+            "오래된 항목순" ->{
+                this.field = "UploadDate"
+                this.sort = "asc"
+            }
+            "큰 항목순" ->{
+                this.field = "FileSize"
+                this.sort = "desc"
+            }
+            "작은 항목순" ->{
+                this.field = "FileSize"
+                this.sort = "asc"
+            }
+            "확장자 명" ->{
+                this.field = "extension"
+                this.sort = "asc"
+            }
+        }
+        loadUserFileList(this.field, this.sort)
+    }
+
+    override fun onNothingSelected(parent: AdapterView<*>?) {
+
+    }
 
 
     // SlidingUpPanelLayout의 add Icon을 클릭 하였을 때의 내부 메뉴 버튼 부분
@@ -245,13 +292,20 @@ class MainActivity : AppCompatActivity(), View.OnClickListener,
     }
 
     //저장된 파일 불러오는 부분
-    fun loadUserFileList(){
+    fun loadUserFileList(field :String, sort: String){
         var list : ArrayList<Map<String, Any>> = arrayListOf()
+        var QueryDirection : Query.Direction
         list.clear()
         UserFileListItem.clear()
         linearManger.removeAllViews() //리사이클러뷰는 레이아웃메니저 안에 내용을 전체 삭제해주고 다시 입력해야한다.
+        if(sort.equals("asc")){
+            QueryDirection = Query.Direction.ASCENDING
+        }else{
+            QueryDirection = Query.Direction.DESCENDING
+        }
         db.collection("FileInfo").document(user.email.toString())
             .collection("Files")
+            .orderBy(field, QueryDirection)
             .get()
             .addOnSuccessListener { result ->
                 var Filelog = result.documents
@@ -270,19 +324,17 @@ class MainActivity : AppCompatActivity(), View.OnClickListener,
             }
     }
     fun loadList(list : ArrayList<Map<String, Any>>) {
-        var itemAdapter : UserFileListAdapter
+        var itemAdapter: UserFileListAdapter
+        var itemLongAdapter: UserFileListAdapter
         UserFileListItem.clear()
         for (data: Map<String, Any> in list) {
             var imageFile: String
             var extension = data!!.get("extension").toString()
             var FileName: String
-            if (extension.equals("dir")) {
-                FileName = data!!.get("DirName").toString()
-            } else {
-                FileName = data!!.get("FileName").toString()
-            }
+            FileName = data!!.get("FileName").toString()
             var UploadDate = data!!.get("UploadDate").toString()
             var FileSize = (data!!.get("FileSize").toString()).toDouble()
+            var FilePath = data!!.get("FilePath").toString()
 
             FileSize = FileSize / 1048576
 
@@ -292,7 +344,10 @@ class MainActivity : AppCompatActivity(), View.OnClickListener,
                 imageFile = "ppt"
             } else if (extension.equals("xls") || extension.equals("xlsx")) {
                 imageFile = "xls"
-            } else if (extension.equals("jpg") || extension.equals("png") || extension.equals("jpeg") || extension.equals("gif")) {
+            } else if (extension.equals("jpg") || extension.equals("png") || extension.equals("jpeg") || extension.equals(
+                    "gif"
+                )
+            ) {
                 imageFile = "photo"
             } else if (extension.equals("pdf")) {
                 imageFile = "pdf"
@@ -309,26 +364,23 @@ class MainActivity : AppCompatActivity(), View.OnClickListener,
                     imageFile,
                     FileName,
                     String.format("%.1f", FileSize),
-                    UploadDate
+                    UploadDate,
+                    FilePath
                 )
             )
         }
-
-        itemAdapter = UserFileListAdapter(this@MainActivity, UserFileListItem) { userFileList ->
+        itemAdapter = UserFileListAdapter(this@MainActivity, UserFileListItem) { userFileList:UserFileList ->
             //Log.e("fileEx" ,userFileList.Fileimg)
-            if(userFileList.Fileimg.equals("folders")){
+            if (userFileList.Fileimg.equals("folders")) {
                 PathStack.push(FilePath)
                 FilePath += "${userFileList.FileName}/"
                 Log.e("path", FilePath)
-                loadUserFileList()
-            }else{
+                loadUserFileList(field, sort)
+            } else {
                 clickFile(userFileList)
-                GlobalScope.launch {
-                    delay(100)
-                    sliding_layout.setPanelState(SlidingUpPanelLayout.PanelState.EXPANDED)
-                }
             }
         }
+
         runOnUiThread(object : Runnable {
             override fun run() {
                 Fileload.adapter = itemAdapter
@@ -340,6 +392,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener,
     }
 
     fun clickFile(userFileList: UserFileList){
+        Log.e("whY", userFileList.FileName)
         headertxt.text = userFileList.FileName
         fileicon.visibility = View.VISIBLE
         val resourceId = this.resources.getIdentifier(userFileList.Fileimg,"drawable",this.packageName)
@@ -372,6 +425,10 @@ class MainActivity : AppCompatActivity(), View.OnClickListener,
         val linearManger = LinearLayoutManager(this)
         itemRecycler.layoutManager = linearManger
         itemRecycler.setHasFixedSize(true) //리스트가 바뀌었을 때 반응형으로 하기위한 코드
+        GlobalScope.launch {
+            delay(100)
+            sliding_layout.setPanelState(SlidingUpPanelLayout.PanelState.EXPANDED)
+        }
     }
 
     //파일 읽기 쓰기 권한 설정 다이어로그
@@ -430,7 +487,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener,
             var fileUpload = FileUpload()
             fileUpload.sendFile(FileName, FileSize, extension, file)
             fileUpload.newUpload(fileUri, FilePath, this)
-            fileUpload.insertFileInfo(FileName, FileSize, extension, user, db, FilePath)
+            fileUpload.insertFileInfo(FileName, FileSize.toLong(), extension, user, db, FilePath)
             fileUpload.filesizeupdate(FileSize, user, db)
         }
     }
@@ -544,6 +601,30 @@ class MainActivity : AppCompatActivity(), View.OnClickListener,
                 Log.e("Failed", exception.toString())
             }
     }
+    /*fun removeFile(context: Context, FilePath : String, FileName : String, userFileList: UserFileList){
+
+        var dialog = AlertDialog.Builder(context)
+        dialog.setTitle("파일 삭제")
+        dialog.setMessage("파일을 삭제 하시겠습니까?")
+
+        var user = userFileList.FilePath.split("/")
+
+        var dialog_listener = object :DialogInterface.OnClickListener{
+            override fun onClick(dialog: DialogInterface?, button: Int) {
+                when(button){
+                    DialogInterface.BUTTON_POSITIVE ->{
+                        FileRemove().removeFile(context, FilePath, userFileList.FileName, user[1], db)
+                    }
+                    DialogInterface.BUTTON_NEGATIVE ->{
+
+                    }
+                }
+            }
+
+        }
+        dialog.setPositiveButton("YES", dialog_listener)
+        dialog.setNegativeButton("NO",  dialog_listener)
+        dialog.show()
+    }*/
 
 }
-

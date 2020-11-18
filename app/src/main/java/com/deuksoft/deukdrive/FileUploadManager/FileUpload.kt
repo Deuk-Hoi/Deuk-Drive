@@ -99,7 +99,7 @@ class FileUpload {
         }
     }
 
-    fun insertFileInfo(FileName: String, FileSize: String, extension: String, user: FirebaseUser, db : FirebaseFirestore, Path: String){
+    fun insertFileInfo(FileName: String, FileSize: Long, extension: String, user: FirebaseUser, db : FirebaseFirestore, Path: String){
         var dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
         var fileinfo = hashMapOf(
             "UserName" to user.displayName,
@@ -121,7 +121,7 @@ class FileUpload {
         var dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
         var fileinfo = hashMapOf(
             "UserName" to user.displayName,
-            "DirName" to DirName,
+            "FileName" to DirName,
             "FileSize" to 0,
             "extension" to "dir",
             "DirPath" to DirPath,
